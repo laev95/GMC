@@ -8,11 +8,12 @@ class Parser:
     class State(Enum):
         DATE = 1
         DATA = 2
+        SPEC = 3
 
     def __init__(self) -> None:
-        
         self.parser_state = None
         self.start_end_token = "55aa" 
+
         self.time_stamp_token = "00"
         self.time_stamp_save_type_token = {
             "00" : "off", 
@@ -23,20 +24,27 @@ class Parser:
             "05" : "save every minute after threshold"
         }
         self.current_save_type = None
-        self.byte_type_token = {
+
+        self.special_byte_token = {
             "01" : "double",
             "02" : "ascii",
             "03" : "triple",
-            "04" : "quadruple"
+            "04" : "quadruple",
+            "05" : "tube"
         }
-        self.tube_selection_token = "05"
+
+        self.tube_selected_token = {
+            "00" : "both",
+            "01" : "tube 1",
+            "02" : "tube 2",
+        }
+
 
     @staticmethod
     def get_two_bytes(iterable_data: Iterable[str]) -> str:
         return next(iterable_data) + next(iterable_data)
 
     def parse_history_data(self, raw_hist: str) -> None:
-        formatted_text: list[str]
         buffer: str
         start_index = raw_hist.find(self.start_end_token) 
 
@@ -56,10 +64,10 @@ class Parser:
             buffer = byte + next(iterable_hist)
             if buffer == self.time_stamp_token:
                 self.parser_state = self.State.DATE
-            elif buffer in self.byte_type_token:
-                self.parser_state = self.State.DATA
+            elif buffer in self.special_byte_token:
+                self.parser_state = self.State.SPEC
             else:
-                print(f"Expected byte value between 00-05 got {buffer} instead!")
+                print(f"Expected byte value 00 got {buffer} instead!")
                 break
 
             if self.parser_state == self.State.DATE:
@@ -79,19 +87,29 @@ class Parser:
 
                 buffer = self.get_two_bytes(iterable_hist)
 
-                if buffer not in self.time_stamp_save_token:
+                if buffer not in self.time_stamp_save_type_token:
                     print(f"Expected indicator of save data type, got {buffer} instead")
                     break
                 
-                print(f"Save data type: {self.time_stamp_save_token[buffer]}")
+                print(f"Save data type: {self.time_stamp_save_type_token[buffer]}")
+                self.current_save_type = buffer
 
                 buffer = self.get_two_bytes(iterable_hist) + self.get_two_bytes(iterable_hist)
                 if buffer != self.start_end_token:
-                    self.parser_state == self.State.DATA
+                    self.parser_state = self.State.DATA
 
             if self.parser_state == self.State.DATA:
-                pass
+                if self.current_save_type == "03":
+                    buffer += self.get_two_bytes(iterable_hist) 
+                    print(f"Average cpm: {int(buffer[:2], 16)}")
 
+                    if buffer[2:] != self.start_end_token:
+                        print(f"Error. Expected end of sequence marker, got {buffer} instead.")
+                        break
+
+            if self.parser_state == self.State.SPEC:
+               if buffer == "05":
+                   print(f"Tube mdode: {self.tube_selected_token[self.get_two_bytes(iterable_hist)]}")
 
 def get_raw_data(conn: Serial) -> str:
     addr = 0x000000
