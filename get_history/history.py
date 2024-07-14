@@ -2,6 +2,7 @@ from config import CONN, FLASH_SIZE
 from parser import Parser
 from util import get_raw_data
 
+# TODO add logic for transition to special state
 
 def parse_history_data(raw_hist: str) -> None:
     buffer: str
