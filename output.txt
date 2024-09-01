@@ -1,0 +1,25 @@
+55aa00 <- always start with timestamp
+180901111d34 <- date
+55aa02 <- save type token
+       <- no special token => one byte values
+1a1610100c0b140f0b <- actual values (Check if 55aa is value => not token!)
+
+55aa00 <- date token again
+180901112c07 <- date value
+55aa02 <- save type
+
+55aa00 
+180901112c08
+55aa03 <- changed save type!
+
+55aa00 
+180901112c08
+55aa04 <- change again!
+
+55aa00
+180901112c09
+55aa05 <- changed!
+
+55aa00
+180901112c09
+55aa00 <- save type off!

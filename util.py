@@ -41,4 +41,5 @@ def get_raw_data() -> str:
     raw_dump = CONN.read(data_length)
 
     #TODO check if next four values are xff before rstrip!
+    #z = custom end character
     return raw_dump.rstrip(b"\xff").hex()+"z"
