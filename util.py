@@ -26,7 +26,7 @@ def get_voltage() -> str:
     CONN.write(b"<GETVOLT>>")
     return CONN.read(5).decode()
 
-def get_raw_data() -> str:
+def get_history_bytes() -> str:
     addr = 0x000000
     data_length = 4096
 
@@ -42,4 +42,4 @@ def get_raw_data() -> str:
 
     #TODO check if next four values are xff before rstrip!
     #z = custom end character
-    return raw_dump.rstrip(b"\xff").hex()+"z"
+    return raw_dump.rstrip(b"\xff").hex()
