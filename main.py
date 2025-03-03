@@ -1,6 +1,5 @@
-from parser import Parser
+from parser.parser import Parser
 from util import get_history_bytes
-
 
 raw_hist = get_history_bytes()
 start_index = raw_hist.find("55aa") 
