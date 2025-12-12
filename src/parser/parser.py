@@ -86,7 +86,7 @@ def parse_gmc_history(
             break
 
         if state == State.SPEC:
-            # In your naive loop you keep consuming TOKEN_LEN chunks and react if special.
+            # Consuming TOKEN_LEN chunks and react if special.
             tok = read(TOKEN_LEN)
 
             if tok in SPECIAL_BYTE_TOKEN:
@@ -111,16 +111,16 @@ def parse_gmc_history(
                     # Next 3 bytes select tube
                     tube_tok = read(TOKEN_LEN)
                     current_record.tube = TUBE_SELECTED_TOKEN.get(tube_tok, f"unknown({tube_tok.hex()})")
+                    #TODO
                     # After tube selection, continue in SPEC (mode may follow) or DATA;
-                    # your naive code jumps to DATE, but in real streams tube selection
+                    # code jumps to DATE, but in real streams tube selection
                     # often just changes metadata. Adjust here if you confirm otherwise.
                     state = State.SPEC
                 else:
                     state = State.FAIL
 
             else:
-                # Not a special token; most streams will go into DATA with current reading.
-                # If you *require* a special token before data, remove this.
+                # Not a special token; most streams will go into DATA with current reading
                 state = State.DATA
                 # "unread" the token by stepping back, so DATA can treat it as data/tokens
                 ptr -= TOKEN_LEN
