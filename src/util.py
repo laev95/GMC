@@ -1,5 +1,4 @@
 from config import CONN
-from parser.parser import parse
 import struct
 
 def get_hardware_model() -> str:
@@ -7,7 +6,7 @@ def get_hardware_model() -> str:
     response = CONN.read(15)
     return response.decode()
 
-def get_CPM() -> int:
+def get_cpm() -> int:
     CONN.write(b"<GETCPM>>")
     response = CONN.read(4)
     return int.from_bytes(response)
@@ -41,5 +40,4 @@ def get_history_bytes() -> str:
     raw_dump = CONN.read(data_length)
 
     #TODO check if next four values are xff before rstrip!
-    #z = custom end character
-    return parse(raw_dump.rstrip(b"\xff"))
+    return raw_dump.rstrip(b"\xff")

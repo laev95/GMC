@@ -1,4 +1,4 @@
-from parser.parser import Parser
+from src.parser.parser import parse_gmc_history
 from util import get_history_bytes
 
 raw_hist = get_history_bytes()
@@ -8,4 +8,4 @@ if start_index == -1:
     print("Error no start sequence found!")
     quit()
 
-Parser.parse_history(raw_hist[start_index:])
+parse_gmc_history(raw_hist[start_index:])
