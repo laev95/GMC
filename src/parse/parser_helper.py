@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from parser_token import TOKEN_LEN, DATE_LEN, TIMESTAMP_MARKER
+from .parser_token import TOKEN_LEN, DATE_LEN, TIMESTAMP_MARKER
 
 def _is_plausible_date6(b6: bytes) -> bool:
     if len(b6) != 6:
