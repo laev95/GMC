@@ -1,11 +1,11 @@
-from src.parser.parser import parse_gmc_history
+from parse.parser import parse_gmc_history
 from util import get_history_bytes
 
 raw_hist = get_history_bytes()
-start_index = raw_hist.find("55aa") 
+records = parse_gmc_history(raw_hist)
 
-if start_index == -1:
-    print("Error no start sequence found!")
-    quit()
-
-parse_gmc_history(raw_hist[start_index:])
+PREVIEW = 20
+for r in records:
+    print(r.ts.isoformat(), r.save_type, "tube=", r.tube)
+    for segment in r.segments:
+        print("  ", segment.mode, segment.values[:PREVIEW], f"... ({len(segment.values)} total)")
