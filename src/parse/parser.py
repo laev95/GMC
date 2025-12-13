@@ -14,8 +14,8 @@ def parse_gmc_history(raw_bytes: bytes, *, tz=timezone.utc, endian: str = "big")
       - A new record begins at a valid header: 55aa00 + date6 + save_type_token
       - Inside data, the 3-byte sequences 55aa01..55aa05 can appear as *special* tokens
         (double/ascii/triple/quadruple/tube), changing how the following measurements decode.
-      - Tube token (55aa05 in SPECIAL_BYTE_TOKEN) is followed by another 3-byte token
-        selecting tube (55aa00/01/02), then continues.
+      - Tube token (55aa05 in SPECIAL_BYTE_TOKEN) is followed by another 1-byte token
+        selecting tube (00/01/02), then continues.
     """
     buf = raw_bytes
     ptr = 0
