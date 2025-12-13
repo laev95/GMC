@@ -1,32 +1,23 @@
-from parser_model import Record, State, Segment, Reading
-from parser_token import DATE_LEN, TOKEN_LEN, SPECIAL_BYTE_TOKEN, SAVE_TYPE_TOKEN, TUBE_SELECTED_TOKEN
-from parser_helper import _parse_date6, _is_valid_header, _bytes_to_uint
+from .parser_model import Record, State, Segment, Reading
+from .parser_token import DATE_LEN, TOKEN_LEN, SPECIAL_BYTE_TOKEN, SAVE_TYPE_TOKEN, TUBE_SELECTED_TOKEN, TUBE_TOKEN_LEN
+from .parser_helper import _parse_date6, _is_valid_header, _bytes_to_uint
 from datetime import timezone
 from typing import List, Optional
 
 
-def parse_gmc_history(
-    hex_string: str,
-    *,
-    tz=timezone.utc,
-    endian: str = "big",   # try "little" if values look wrong
-) -> List[Record]:
+def parse_gmc_history(raw_bytes: bytes, *, tz=timezone.utc, endian: str = "big") -> List[Record]:
     """
     Parses a continuous history stream that may include "special byte" tokens
     changing the measurement width or ASCII mode.
 
-    Assumptions (matching your state machine):
+    Assumptions:
       - A new record begins at a valid header: 55aa00 + date6 + save_type_token
       - Inside data, the 3-byte sequences 55aa01..55aa05 can appear as *special* tokens
-        (double/ascii/triple/quadruple/tube), changing how subsequent measurements decode.
+        (double/ascii/triple/quadruple/tube), changing how the following measurements decode.
       - Tube token (55aa05 in SPECIAL_BYTE_TOKEN) is followed by another 3-byte token
         selecting tube (55aa00/01/02), then continues.
     """
-    s = "".join(hex_string.split()).lower()
-    if len(s) % 2:
-        raise ValueError("Odd-length hex string.")
-    buf = bytes.fromhex(s)
-
+    buf = raw_bytes
     ptr = 0
     state = State.DATE
     reading = Reading.SINGLE
@@ -37,7 +28,7 @@ def parse_gmc_history(
         nonlocal current_seg
         assert current_record is not None
         if current_seg is None or current_seg.mode != mode:
-            current_seg = Segment(mode=mode)
+            current_seg = Segment(mode)
             current_record.segments.append(current_seg)
         return current_seg
 
@@ -59,15 +50,16 @@ def parse_gmc_history(
         date6 = read(DATE_LEN)
         save3 = read(3)
 
-        ts = _parse_date6(date6, tz=tz)
+        ts = _parse_date6(date6, tz)
         save_type = SAVE_TYPE_TOKEN.get(save3, f"unknown({save3.hex()})")
 
-        current_record = Record(ts=ts, save_type_token=save3, save_type=save_type)
+        current_record = Record(ts, save_type_token=save3.hex(), save_type=save_type)
         current_seg = None
         reading = Reading.SINGLE
-        state = State.SPEC  # next tokens inside the record might immediately set mode
+        state = State.SPEC
 
     records: List[Record] = []
+    last_record_tube = None
 
     while ptr < len(buf):
         if state == State.DATE:
@@ -78,7 +70,7 @@ def parse_gmc_history(
             if ptr >= len(buf):
                 break
             start_new_record_at_header()
-            records.append(current_record)  # type: ignore[arg-type]
+            records.append(current_record)
             continue
 
         if current_record is None:
@@ -86,7 +78,6 @@ def parse_gmc_history(
             break
 
         if state == State.SPEC:
-            # Consuming TOKEN_LEN chunks and react if special.
             tok = read(TOKEN_LEN)
 
             if tok in SPECIAL_BYTE_TOKEN:
@@ -108,22 +99,21 @@ def parse_gmc_history(
                     state = State.DATA
 
                 elif kind == "tube":
-                    # Next 3 bytes select tube
-                    tube_tok = read(TOKEN_LEN)
+                    tube_tok = read(TUBE_TOKEN_LEN)
                     current_record.tube = TUBE_SELECTED_TOKEN.get(tube_tok, f"unknown({tube_tok.hex()})")
-                    #TODO
-                    # After tube selection, continue in SPEC (mode may follow) or DATA;
-                    # code jumps to DATE, but in real streams tube selection
-                    # often just changes metadata. Adjust here if you confirm otherwise.
+                    last_record_tube = current_record.tube
                     state = State.SPEC
+
                 else:
+                    print(f"Unknown special token: {tok.hex()}")
                     state = State.FAIL
 
             else:
-                # Not a special token; most streams will go into DATA with current reading
                 state = State.DATA
-                # "unread" the token by stepping back, so DATA can treat it as data/tokens
                 ptr -= TOKEN_LEN
+
+            if current_record.tube is None:
+                current_record.tube = last_record_tube
 
             continue
 
@@ -144,20 +134,18 @@ def parse_gmc_history(
             ascii_bytes = buf[start:i]
             ptr = i
 
-            # decode best-effort; keep raw hex on failure
             if ascii_bytes:
                 try:
-                    seg.values.append(ascii_bytes.decode("ascii", errors="strict"))
+                    seg.values.append(ascii_bytes.decode(encoding="ascii", errors="strict"))
                 except UnicodeDecodeError:
                     seg.values.append(ascii_bytes.hex())
 
-            # Next thing is a token (special or header) or EOF
             if ptr >= len(buf):
                 break
             if _is_valid_header(buf, ptr):
                 state = State.DATE
             else:
-                state = State.SPEC  # likely 55aa01..05
+                state = State.SPEC
             continue
 
         if state == State.DATA:
@@ -171,12 +159,7 @@ def parse_gmc_history(
                 continue
 
             # Otherwise consume one measurement of current width.
-            mode_name = {
-                Reading.SINGLE: "single",
-                Reading.DOUBLE: "double",
-                Reading.TRIPLE: "triple",
-                Reading.QUADRUPLE: "quadruple",
-            }[reading]
+            mode_name = reading.name.lower()
             seg = need_seg(mode_name)
             try:
                 raw = read(int(reading))
@@ -185,24 +168,6 @@ def parse_gmc_history(
             seg.values.append(_bytes_to_uint(raw, endian=endian))
             continue
 
-        # FAIL or unknown
         break
 
     return records
-
-
-# ---------------- example use ----------------
-if __name__ == "__main__":
-    example = """
-    55aa00 180901111d34 55aa02 1a1610100c0b140f0b
-    55aa00 180901112c07 55aa02
-    55aa00 180901112c08 55aa03
-    55aa00 180901112c08 55aa04
-    55aa00 180901112c09 55aa05
-    55aa00 180901112c09 55aa00
-    """
-    recs = parse_gmc_history(example, endian="big")
-    for r in recs:
-        print(r.ts.isoformat(), r.save_type, "tube=", r.tube)
-        for seg in r.segments:
-            print("  ", seg.mode, seg.values[:20])
