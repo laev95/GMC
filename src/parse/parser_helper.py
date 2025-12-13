@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from .parser_token import TOKEN_LEN, DATE_LEN, TIMESTAMP_MARKER
 
+
 def _is_plausible_date6(b6: bytes) -> bool:
     if len(b6) != 6:
         return False
@@ -15,9 +16,9 @@ def _is_plausible_date6(b6: bytes) -> bool:
     )
 
 
-def _parse_date6(b6: bytes, tz=timezone.utc) -> datetime:
+def _parse_date6(b6: bytes) -> datetime:
     yy, mo, dd, hh, mi, ss = b6
-    return datetime(2000 + yy, mo, dd, hh, mi, ss, tzinfo=tz)
+    return datetime(2000 + yy, mo, dd, hh, mi, ss)
 
 
 def _is_valid_header(buf: bytes, pos: int) -> bool:
@@ -35,5 +36,5 @@ def _is_valid_header(buf: bytes, pos: int) -> bool:
     return _is_plausible_date6(date6) and save3[:2] == b"\x55\xaa"
 
 
-def _bytes_to_uint(b: bytes, endian: str) -> int:
-    return int.from_bytes(b, byteorder=endian, signed=False)
+def _bytes_to_uint(b: bytes) -> int:
+    return int.from_bytes(b, signed=False)

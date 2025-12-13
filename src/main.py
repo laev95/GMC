@@ -6,6 +6,6 @@ records = parse_gmc_history(raw_hist)
 
 PREVIEW = 20
 for r in records:
-    print(r.ts.isoformat(), r.save_type, "tube=", r.tube)
+    print(f"{r.ts.isoformat(sep=" ", timespec="seconds")};", f"save_type={r.save_type};", f"tube={r.tube}")
     for segment in r.segments:
         print("  ", segment.mode, segment.values[:PREVIEW], f"... ({len(segment.values)} total)")

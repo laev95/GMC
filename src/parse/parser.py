@@ -1,11 +1,10 @@
 from .parser_model import Record, State, Segment, Reading
 from .parser_token import DATE_LEN, TOKEN_LEN, SPECIAL_BYTE_TOKEN, SAVE_TYPE_TOKEN, TUBE_SELECTED_TOKEN, TUBE_TOKEN_LEN
 from .parser_helper import _parse_date6, _is_valid_header, _bytes_to_uint
-from datetime import timezone
 from typing import List, Optional
 
 
-def parse_gmc_history(raw_bytes: bytes, *, tz=timezone.utc, endian: str = "big") -> List[Record]:
+def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
     """
     Parses a continuous history stream that may include "special byte" tokens
     changing the measurement width or ASCII mode.
@@ -51,7 +50,7 @@ def parse_gmc_history(raw_bytes: bytes, *, tz=timezone.utc, endian: str = "big")
         date6 = read(DATE_LEN)
         save3 = read(TOKEN_LEN)
 
-        ts = _parse_date6(date6, tz)
+        ts = _parse_date6(date6)
         save_type = SAVE_TYPE_TOKEN.get(save3, f"unknown({save3.hex()})")
 
         current_record = Record(ts, save_type_token=save3.hex(), save_type=save_type)
@@ -165,7 +164,7 @@ def parse_gmc_history(raw_bytes: bytes, *, tz=timezone.utc, endian: str = "big")
                 raw = read(int(reading))
             except EOFError:
                 break
-            seg.values.append(_bytes_to_uint(raw, endian=endian))
+            seg.values.append(_bytes_to_uint(raw))
             continue
 
         break
