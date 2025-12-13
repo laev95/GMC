@@ -17,11 +17,13 @@ def parse_gmc_history(raw_bytes: bytes, *, tz=timezone.utc, endian: str = "big")
       - Tube token (55aa05 in SPECIAL_BYTE_TOKEN) is followed by another 1-byte token
         selecting tube (00/01/02), then continues.
     """
+
     buf = raw_bytes
     ptr = 0
     state = State.DATE
     reading = Reading.SINGLE
     current_record: Optional[Record] = None
+    last_record_tube: str = ""
     current_seg: Optional[Segment] = None
 
     def need_seg(mode: str) -> Segment:
@@ -45,10 +47,9 @@ def parse_gmc_history(raw_bytes: bytes, *, tz=timezone.utc, endian: str = "big")
 
     def start_new_record_at_header() -> None:
         nonlocal current_record, current_seg, reading, state
-        # we are positioned at 55aa00
-        _ = read(3)                 # 55aa00
+        _ = read(TOKEN_LEN)
         date6 = read(DATE_LEN)
-        save3 = read(3)
+        save3 = read(TOKEN_LEN)
 
         ts = _parse_date6(date6, tz)
         save_type = SAVE_TYPE_TOKEN.get(save3, f"unknown({save3.hex()})")
@@ -59,7 +60,6 @@ def parse_gmc_history(raw_bytes: bytes, *, tz=timezone.utc, endian: str = "big")
         state = State.SPEC
 
     records: List[Record] = []
-    last_record_tube = None
 
     while ptr < len(buf):
         if state == State.DATE:
@@ -154,7 +154,7 @@ def parse_gmc_history(raw_bytes: bytes, *, tz=timezone.utc, endian: str = "big")
                 state = State.DATE
                 continue
 
-            if peek(2) == b"\x55\xaa" and peek(3) in SPECIAL_BYTE_TOKEN:
+            if peek(2) == b"\x55\xaa" and peek(TOKEN_LEN) in SPECIAL_BYTE_TOKEN:
                 state = State.SPEC
                 continue
 
