@@ -16,11 +16,12 @@ SPECIAL_BYTE_TOKEN = {
 }
 
 TUBE_SELECTED_TOKEN = {
-    b"\x55\xaa\x00": "both",
-    b"\x55\xaa\x01": "tube 1",
-    b"\x55\xaa\x02": "tube 2",
+    b"\x00": "both",
+    b"\x01": "tube 1",
+    b"\x02": "tube 2",
 }
 
 TIMESTAMP_MARKER = b"\x55\xaa\x00"  # date token/header marker
 TOKEN_LEN = 3
+TUBE_TOKEN_LEN = 1
 DATE_LEN = 6  # YY MM DD HH mm ss (raw bytes)
