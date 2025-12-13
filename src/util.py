@@ -26,7 +26,7 @@ def get_voltage() -> str:
     CONN.write(b"<GETVOLT>>")
     return CONN.read(5).decode()
 
-def get_history_bytes() -> str:
+def get_history_bytes() -> bytes:
     addr = 0x000000
     data_length = 4096
 
@@ -37,7 +37,4 @@ def get_history_bytes() -> str:
                 data_length)
 
     CONN.write(b'<SPIR' + cmd + b'>>')
-    raw_dump = CONN.read(data_length)
-
-    #TODO check if next four values are xff before rstrip!
-    return raw_dump.rstrip(b"\xff")
+    return CONN.read(data_length)
