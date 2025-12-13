@@ -29,7 +29,7 @@ class Segment:
 @dataclass
 class Record:
     ts: datetime
-    save_type_token: bytes
+    save_type_token: str
     save_type: str
     tube: Optional[str] = None
     segments: List[Segment] = field(default_factory=list)
