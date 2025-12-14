@@ -126,7 +126,7 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
             i = ptr
             while i + 3 <= len(buf):
                 if buf[i:i + 2] == b"\x55\xaa":
-                    cand = buf[i:i + 3]
+                    cand = buf[i:i + TOKEN_LEN]
                     if cand in SPECIAL_BYTE_TOKEN or _is_valid_header(buf, i):
                         break
                 i += 1
@@ -157,7 +157,6 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
                 state = State.SPEC
                 continue
 
-            # Otherwise consume one measurement of current width.
             mode_name = reading.name.lower()
             seg = need_seg(mode_name)
             try:

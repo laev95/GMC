@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from .parser_token import TOKEN_LEN, DATE_LEN, TIMESTAMP_MARKER
 
 
@@ -29,10 +29,10 @@ def _is_valid_header(buf: bytes, pos: int) -> bool:
     """
     if pos + TOKEN_LEN + DATE_LEN + TOKEN_LEN > len(buf):
         return False
-    if buf[pos:pos + 3] != TIMESTAMP_MARKER:
+    if buf[pos:pos + TOKEN_LEN] != TIMESTAMP_MARKER:
         return False
-    date6 = buf[pos + 3:pos + 3 + DATE_LEN]
-    save3 = buf[pos + 3 + DATE_LEN:pos + 3 + DATE_LEN + 3]
+    date6 = buf[pos + TOKEN_LEN:pos + TOKEN_LEN + DATE_LEN]
+    save3 = buf[pos + TOKEN_LEN + DATE_LEN:pos + TOKEN_LEN + DATE_LEN + 3]
     return _is_plausible_date6(date6) and save3[:2] == b"\x55\xaa"
 
 

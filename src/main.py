@@ -1,5 +1,5 @@
-from parse.parser import parse_gmc_history
 from util import get_history_bytes
+from parse.parser import parse_gmc_history
 
 raw_hist = get_history_bytes()
 records = parse_gmc_history(raw_hist)

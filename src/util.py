@@ -17,9 +17,9 @@ def turn_on_heartbeat():
     while beats < 10:
         yield CONN.read(4)
         beats += 1
-    turn_off_hearbeat()
+    turn_off_heartbeat()
 
-def turn_off_hearbeat() -> None:
+def turn_off_heartbeat() -> None:
     CONN.write(b"<HEARTBEAT0>>")
 
 def get_voltage() -> str:

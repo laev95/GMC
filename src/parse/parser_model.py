@@ -4,6 +4,7 @@ from enum import Enum, IntEnum
 from dataclasses import dataclass, field
 from datetime import datetime
 
+
 class State(Enum):
     DATE = "DATE"
     SPEC = "SPEC"
