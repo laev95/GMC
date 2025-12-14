@@ -17,13 +17,25 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
         selecting tube (00/01/02), then continues.
     """
 
-    buf = raw_bytes
-    ptr = 0
-    state = State.DATE
-    reading = Reading.SINGLE
-    current_record: Optional[Record] = None
-    last_record_tube: str = ""
-    current_seg: Optional[Segment] = None
+    def read_values() -> bytes:
+        """
+        Read bytes until we hit a token prefix 55aa?? that is either:
+            - a valid header (55aa00 + date + 55aa??)
+            - a special token (55aa01..05)
+        We stop *before* that token so the main loop can process it.
+        """
+        nonlocal ptr
+        start = ptr
+        i = ptr
+        while i + 3 <= len(buf):
+            if buf[i:i + 2] == b"\x55\xaa":
+                cand = buf[i:i + TOKEN_LEN]
+                if cand in SPECIAL_BYTE_TOKEN or _is_valid_header(buf, i):
+                    break
+            i += 1
+        ptr = i
+
+        return buf[start:i]
 
     def need_seg(mode: str) -> Segment:
         nonlocal current_seg
@@ -37,12 +49,14 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
         nonlocal ptr
         if ptr + n > len(buf):
             raise EOFError("Unexpected end of stream.")
-        out = buf[ptr:ptr + n]
+        out = buf[ptr : ptr+n]
         ptr += n
         return out
 
     def peek(n: int) -> bytes:
-        return buf[ptr:ptr + n]
+        if ptr + n > len(buf):
+            raise EOFError("Unexpected end of stream.")
+        return buf[ptr : ptr+n]
 
     def start_new_record_at_header() -> None:
         nonlocal current_record, current_seg, reading, state
@@ -58,6 +72,13 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
         reading = Reading.SINGLE
         state = State.SPEC
 
+    buf = raw_bytes
+    ptr = 0
+    state = State.DATE
+    reading = Reading.SINGLE
+    current_record: Optional[Record] = None
+    last_record_tube: str = ""
+    current_seg: Optional[Segment] = None
     records: List[Record] = []
 
     while ptr < len(buf):
@@ -118,20 +139,7 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
 
         if state == State.ASCI:
             seg = need_seg("ascii")
-            # Read bytes until we hit a token prefix 55aa?? that is either:
-            #   - a valid header (55aa00 + date + 55aa??)
-            #   - a special token (55aa01..05)
-            # We stop *before* that token so the main loop can process it.
-            start = ptr
-            i = ptr
-            while i + 3 <= len(buf):
-                if buf[i:i + 2] == b"\x55\xaa":
-                    cand = buf[i:i + TOKEN_LEN]
-                    if cand in SPECIAL_BYTE_TOKEN or _is_valid_header(buf, i):
-                        break
-                i += 1
-            ascii_bytes = buf[start:i]
-            ptr = i
+            ascii_bytes = read_values()
 
             if ascii_bytes:
                 try:
@@ -160,6 +168,8 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
             mode_name = reading.name.lower()
             seg = need_seg(mode_name)
             try:
+                if peek(4) == b"\xff\xff\xff\xff":
+                    raise EOFError
                 raw = read(int(reading))
             except EOFError:
                 break
