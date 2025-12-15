@@ -1,11 +1,4 @@
-from util import get_history_bytes
-from parse.parser import parse_gmc_history
+from frontend.main_page import app, ui
 
-raw_hist = get_history_bytes()
-records = parse_gmc_history(raw_hist)
-
-PREVIEW = 20
-for r in records:
-    print(f"{r.ts.isoformat(sep=" ", timespec="seconds")};", f"save_type={r.save_type};", f"tube={r.tube}")
-    for segment in r.segments:
-        print("  ", segment.mode, segment.values[:PREVIEW], f"... ({len(segment.values)} total)")
+app()
+ui.run()

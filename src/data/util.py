@@ -1,4 +1,5 @@
-from config import CONN
+from .config import CONN
+from .parse.parser import parse_gmc_history
 import struct
 
 def get_hardware_model() -> str:
@@ -27,6 +28,7 @@ def get_voltage() -> str:
     return CONN.read(5).decode()
 
 def get_history_bytes() -> bytes:
+    # TODO add logic for progressing address for next buffer.
     addr = 0x000000
     data_length = 4096
 
@@ -38,3 +40,13 @@ def get_history_bytes() -> bytes:
 
     CONN.write(b'<SPIR' + cmd + b'>>')
     return CONN.read(data_length)
+
+def get_history():
+    raw_hist = get_history_bytes()
+    records = parse_gmc_history(raw_hist)
+
+    preview = 20
+    for r in records:
+        print(f"{r.ts.isoformat(sep=" ", timespec="seconds")};", f"save_type={r.save_type};", f"tube={r.tube}")
+        for segment in r.segments:
+            print("  ", segment.mode, segment.values[:preview], f"... ({len(segment.values)} total)")
