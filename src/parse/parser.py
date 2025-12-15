@@ -8,34 +8,20 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
     """
     Parses a continuous history stream that may include "special byte" tokens
     changing the measurement width or ASCII mode.
-
-    Assumptions:
-      - A new record begins at a valid header: 55aa00 + date6 + save_type_token
-      - Inside data, the 3-byte sequences 55aa01..55aa05 can appear as *special* tokens
-        (double/ascii/triple/quadruple/tube), changing how the following measurements decode.
-      - Tube token (55aa05 in SPECIAL_BYTE_TOKEN) is followed by another 1-byte token
-        selecting tube (00/01/02), then continues.
     """
-
-    def read_values() -> bytes:
-        """
-        Read bytes until we hit a token prefix 55aa?? that is either:
-            - a valid header (55aa00 + date + 55aa??)
-            - a special token (55aa01..05)
-        We stop *before* that token so the main loop can process it.
-        """
+    def read_ascii_bytes() -> bytes:
         nonlocal ptr
         start = ptr
-        i = ptr
-        while i + 3 <= len(buf):
-            if buf[i:i + 2] == b"\x55\xaa":
-                cand = buf[i:i + TOKEN_LEN]
-                if cand in SPECIAL_BYTE_TOKEN or _is_valid_header(buf, i):
-                    break
-            i += 1
-        ptr = i
+        local_ptr = ptr
+        while local_ptr + TOKEN_LEN <= len(buf):
+            if buf[local_ptr:local_ptr+TOKEN_LEN] in SPECIAL_BYTE_TOKEN or _is_valid_header(buf, local_ptr):
+                break
+            if buf[local_ptr] == b"\xff":
+                break
+            local_ptr += 1
+        ptr = local_ptr
 
-        return buf[start:i]
+        return buf[start:local_ptr]
 
     def need_seg(mode: str) -> Segment:
         nonlocal current_seg
@@ -81,7 +67,7 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
     current_seg: Optional[Segment] = None
     records: List[Record] = []
 
-    while ptr < len(buf):
+    while ptr <= len(buf):
         if state == State.DATE:
             # Scan forward until we find a *valid* header
             # (so we don’t get fooled by 55aa00 inside data)
@@ -93,14 +79,14 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
             records.append(current_record)
             continue
 
-        if current_record is None:
-            state = State.FAIL
-            break
-
         if state == State.SPEC:
-            tok = read(TOKEN_LEN)
+            try:
+                lookup = peek(TOKEN_LEN)
+            except EOFError:
+                break
 
-            if tok in SPECIAL_BYTE_TOKEN:
+            if lookup in SPECIAL_BYTE_TOKEN:
+                tok = read(TOKEN_LEN)
                 kind = SPECIAL_BYTE_TOKEN[tok]
 
                 if kind == "ascii":
@@ -127,10 +113,8 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
                 else:
                     print(f"Unknown special token: {tok.hex()}")
                     state = State.FAIL
-
             else:
                 state = State.DATA
-                ptr -= TOKEN_LEN
 
             if current_record.tube is None:
                 current_record.tube = last_record_tube
@@ -138,8 +122,8 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
             continue
 
         if state == State.ASCI:
+            ascii_bytes = read_ascii_bytes()
             seg = need_seg("ascii")
-            ascii_bytes = read_values()
 
             if ascii_bytes:
                 try:
@@ -156,22 +140,26 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
             continue
 
         if state == State.DATA:
-            # Before consuming a measurement, check if we're at a token.
             if _is_valid_header(buf, ptr):
                 state = State.DATE
                 continue
 
-            if peek(2) == b"\x55\xaa" and peek(TOKEN_LEN) in SPECIAL_BYTE_TOKEN:
+            try:
+                lookup = peek(DATE_LEN)
+            except EOFError:
+                break
+            if lookup in SPECIAL_BYTE_TOKEN:
                 state = State.SPEC
                 continue
 
             mode_name = reading.name.lower()
             seg = need_seg(mode_name)
             try:
-                if peek(4) == b"\xff\xff\xff\xff":
-                    raise EOFError
+                if peek(TOKEN_LEN) == b"\xff\xff\xff":
+                    raise EOFError("Reached end of recording.")
                 raw = read(int(reading))
-            except EOFError:
+            except EOFError as e:
+                print(f"EOF while reading {mode_name} data: {e}")
                 break
             seg.values.append(_bytes_to_uint(raw))
             continue
