@@ -1,5 +1,0 @@
-- Date token/timestamp has always date and *then* save type token 
-    - 55aa00 (date) 55aa00 -> saving was turned off!
-- All Measurements are stored as one continous string after date
-- String ends when save type is changed
-- New string begins after new timestamp
