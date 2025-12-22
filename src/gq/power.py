@@ -1,4 +1,4 @@
-from .core import write, read_ack
+from src.gq.core_util.core import write, read_ack
 
 def power_on() -> None:
     """

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from .core import write, read_ack, read_exact, ACK
+from src.gq.core_util.core import write, read_ack, read_exact, ACK
 
 @dataclass(frozen=True)
 class DeviceDateTime:

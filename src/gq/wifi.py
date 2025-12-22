@@ -1,4 +1,4 @@
-from .core import write, read_ack, read_exact
+from src.gq.core_util.core import write, read_ack, read_exact
 
 
 def set_wifi_ssid(ssid: str) -> bool:

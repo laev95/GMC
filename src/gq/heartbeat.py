@@ -1,6 +1,6 @@
 from typing import Iterator
 
-from .core import write, read_exact
+from src.gq.core_util.core import write, read_exact
 
 
 heartbeat_stopped = False

@@ -1,4 +1,4 @@
-from .core import write
+from src.gq.core_util.core import write
 
 def send_key(key: int) -> None:
     """

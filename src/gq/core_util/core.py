@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from serial import Serial
 
-from src.gq.startup.setup import connect
+from src.startup.startup import connect
 
 __all__ = ["ACK", "FLASH_SIZE", "read_exact", "read_ack", "read_u32_be", "write"]
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from struct import pack
-from .core import write, read_exact, read_ack
+from src.gq.core_util.core import write, read_exact, read_ack
 
 """
 Configuration commands for the GQ device. Sensitive settings, not well documented!

@@ -3,8 +3,8 @@ from __future__ import annotations
 from struct import pack
 from typing import Iterator
 
-from .core import write, read_exact, FLASH_SIZE
-from .parse.parser import parse_gmc_history
+from src.gq.core_util.core import write, read_exact, FLASH_SIZE
+from src.gq.history_reader.parser.parser import parse_gmc_history
 
 
 def spir_read(addr: int, length: int) -> bytes:
