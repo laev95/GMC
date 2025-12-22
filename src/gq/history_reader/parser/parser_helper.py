@@ -1,6 +1,8 @@
 from datetime import datetime
 from .parser_token import TOKEN_LEN, DATE_LEN, TIMESTAMP_MARKER
 
+__all__ = ["parse_date6", "is_valid_header"]
+
 
 def _is_plausible_date6(b6: bytes) -> bool:
     if len(b6) != 6:
@@ -16,12 +18,12 @@ def _is_plausible_date6(b6: bytes) -> bool:
     )
 
 
-def _parse_date6(b6: bytes) -> datetime:
+def parse_date6(b6: bytes) -> datetime:
     yy, mo, dd, hh, mi, ss = b6
     return datetime(2000 + yy, mo, dd, hh, mi, ss)
 
 
-def _is_valid_header(buf: bytes, pos: int) -> bool:
+def is_valid_header(buf: bytes, pos: int) -> bool:
     """
     Determines if a given buffer contains a valid header starting at a specified
     position. The validity check involves verifying predefined markers, checking

@@ -6,8 +6,10 @@ from typing import Iterator
 from src.gq.core_util.core import write, read_exact, FLASH_SIZE
 from src.gq.history_reader.parser.parser import parse_gmc_history
 
+__all__ = ["get_history"]
 
-def spir_read(addr: int, length: int) -> bytes:
+
+def _spir_read(addr: int, length: int) -> bytes:
     if not (0 <= addr <= 0xFFFFFF):
         raise ValueError("addr must be 0..0xFFFFFF")
     if not (1 <= length <= 4096):
@@ -22,12 +24,12 @@ def spir_read(addr: int, length: int) -> bytes:
     return read_exact(length)
 
 
-def iter_history_bytes(block_size: int = 4096, min_ff_tail: int = 512) -> Iterator[bytes]:
+def _iter_history_bytes(block_size: int = 4096, min_ff_tail: int = 512) -> Iterator[bytes]:
     addr = 0x000000
     bit_limit = FLASH_SIZE
 
     while True:
-        block = spir_read(addr, block_size)
+        block = _spir_read(addr, block_size)
 
         if all(b == 0xFF for b in block):
             return
@@ -48,10 +50,10 @@ def iter_history_bytes(block_size: int = 4096, min_ff_tail: int = 512) -> Iterat
             return
 
 
-def get_history_bytes() -> bytes:
-    return b"".join(iter_history_bytes())
+def _get_history_bytes() -> bytes:
+    return b"".join(_iter_history_bytes())
 
 
 def get_history():
-    raw = get_history_bytes()
+    raw = _get_history_bytes()
     return parse_gmc_history(raw)

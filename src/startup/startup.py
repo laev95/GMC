@@ -20,7 +20,6 @@ class ConnConfig:
 def _check_ports() -> dict[str, str]:
     """
     Private helper: findet Kandidatenports.
-    Mapping: {<label>: <device>} – hier label=device, wie du wolltest.
     """
     possible: dict[str, str] = {}
     for port in list_ports.comports():

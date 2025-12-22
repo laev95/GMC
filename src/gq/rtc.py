@@ -23,10 +23,10 @@ def get_datetime() -> DeviceDateTime:
     write(b"<GETDATETIME>>")
     data = read_exact(7)
     if len(data) != 7:
-        raise IOError(f"Expected 7 bytes, got {len(data)}")
+        raise OSError(f"Expected 7 bytes, got {len(data)}")
     yy, mm, dd, hh, mi, ss, ack = data
     if ack != ACK:
-        raise IOError(f"Expected ack 0xAA as last byte, got 0x{ack:02X}")
+        raise OSError(f"Expected ack 0xAA as last byte, got 0x{ack:02X}")
     return DeviceDateTime(yy, mm, dd, hh, mi, ss)
 
 

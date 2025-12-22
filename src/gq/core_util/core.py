@@ -20,14 +20,13 @@ def read_exact(n: int) -> bytes:
     while len(buf) < n:
         chunk = ser.read(n - len(buf))
         if not chunk:
-            raise IOError(f"Timeout/EOF while reading {n} bytes (got {len(buf)})")
+            raise OSError(f"Timeout/EOF while reading {n} bytes (got {len(buf)})")
         buf += chunk
     return bytes(buf)
 
 
 def read_ack() -> bool:
-    ser = _ensure_conn()
-    b = ser.read(1)
+    b = read_exact(1)
     return len(b) == 1 and b[0] == ACK
 
 

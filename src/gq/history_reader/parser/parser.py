@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from .parser_helper import _parse_date6, _is_valid_header, _bytes_to_uint
+from .parser_helper import parse_date6, is_valid_header, _bytes_to_uint
 from .parser_model import Record, State, Segment, Reading
 from .parser_token import DATE_LEN, TOKEN_LEN, SPECIAL_BYTE_TOKEN, SAVE_TYPE_TOKEN, TUBE_SELECTED_TOKEN, TUBE_TOKEN_LEN
 
@@ -15,7 +15,8 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
         start = ptr
         local_ptr = ptr
         while local_ptr + TOKEN_LEN <= len(buf):
-            if buf[local_ptr:local_ptr+TOKEN_LEN] in SPECIAL_BYTE_TOKEN or _is_valid_header(buf, local_ptr):
+            #TODO error handling
+            if buf[local_ptr:local_ptr+TOKEN_LEN] in SPECIAL_BYTE_TOKEN or is_valid_header(buf, local_ptr):
                 break
             if buf[local_ptr] == b"\xff":
                 break
@@ -51,7 +52,7 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
         date6 = read(DATE_LEN)
         save3 = read(TOKEN_LEN)
 
-        ts = _parse_date6(date6)
+        ts = parse_date6(date6)
         save_type = SAVE_TYPE_TOKEN.get(save3, f"unknown({save3.hex()})")
 
         current_record = Record(ts, save_type_token=save3.hex(), save_type=save_type)
@@ -70,7 +71,7 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
 
     while ptr <= len(buf):
         if state == State.DATE:
-            while ptr < len(buf) and not _is_valid_header(buf, ptr):
+            while ptr < len(buf) and not is_valid_header(buf, ptr):
                 ptr += 1
             if ptr >= len(buf):
                 break
@@ -132,14 +133,14 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
 
             if ptr >= len(buf):
                 break
-            if _is_valid_header(buf, ptr):
+            if is_valid_header(buf, ptr):
                 state = State.DATE
             else:
                 state = State.SPEC
             continue
 
         if state == State.DATA:
-            if _is_valid_header(buf, ptr):
+            if is_valid_header(buf, ptr):
                 state = State.DATE
                 continue
 
