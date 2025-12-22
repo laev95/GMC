@@ -23,9 +23,16 @@ def _parse_date6(b6: bytes) -> datetime:
 
 def _is_valid_header(buf: bytes, pos: int) -> bool:
     """
-    Treat 55aa00 as a *real* date/header only if:
-      55aa00 + 6 plausible date bytes + 55aa?? (any 55aaXX)
-    This avoids accidentally splitting when 55aa00 occurs in measurement bytes.
+    Determines if a given buffer contains a valid header starting at a specified
+    position. The validity check involves verifying predefined markers, checking
+    a plausible date format, and validating specific byte patterns.
+
+    :param buf: The byte buffer to inspect.
+    :type buf: bytes
+    :param pos: The starting position within the buffer for header validation.
+    :type pos: int
+    :return: True if the header is valid, otherwise False.
+    :rtype: bool
     """
     if pos + TOKEN_LEN + DATE_LEN + TOKEN_LEN > len(buf):
         return False

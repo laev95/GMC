@@ -1,4 +1,8 @@
 from frontend.main_page import app, ui
+from gq.startup.setup import connect
 
-app()
-ui.run()
+if __name__ == "__main__":
+    test_connection = connect()
+
+    app()
+    ui.run()

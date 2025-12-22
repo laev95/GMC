@@ -1,7 +1,8 @@
+from typing import List, Optional
+
+from .parser_helper import _parse_date6, _is_valid_header, _bytes_to_uint
 from .parser_model import Record, State, Segment, Reading
 from .parser_token import DATE_LEN, TOKEN_LEN, SPECIAL_BYTE_TOKEN, SAVE_TYPE_TOKEN, TUBE_SELECTED_TOKEN, TUBE_TOKEN_LEN
-from .parser_helper import _parse_date6, _is_valid_header, _bytes_to_uint
-from typing import List, Optional
 
 
 def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
@@ -69,8 +70,6 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
 
     while ptr <= len(buf):
         if state == State.DATE:
-            # Scan forward until we find a *valid* header
-            # (so we don’t get fooled by 55aa00 inside data)
             while ptr < len(buf) and not _is_valid_header(buf, ptr):
                 ptr += 1
             if ptr >= len(buf):

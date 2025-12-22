@@ -1,5 +1,7 @@
 from nicegui import ui
-from src.data.util import get_cpm
+
+from src.gq.radiation import get_cpm
+
 
 @ui.refreshable
 def app():

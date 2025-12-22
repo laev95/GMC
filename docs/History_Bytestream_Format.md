@@ -150,5 +150,5 @@ Measurement runs may be interrupted at any time by:
 - A record ends when the next valid header begins.
 - The device does **not** emit an explicit end-of-recording marker.
 - When the internal history buffer is not fully used, the device fills the
-  remaining bytes (≈4000 bytes total) with the value `0xFF` (`255`).
+  remaining bytes with the value `0xFF` (`255`).
 

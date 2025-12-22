@@ -1,5 +1,5 @@
 55aa00 190c0d00050d (date) -> 55aa00 (save mode)
-55aa05-->00 (special: tube)
+55aa05 -> 00 (special: tube)
 
 55aa00 190c0d000c07 (date) -> 55aa00 (save mode)
 (special: none)
