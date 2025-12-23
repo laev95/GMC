@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from serial import Serial
+from serial import Serial, SerialException
 
-from src.startup.startup import connect
+import src.startup.startup as startup
 
 __all__ = ["ACK", "FLASH_SIZE", "read_exact", "read_ack", "read_u32_be", "write"]
 
@@ -11,16 +11,21 @@ FLASH_SIZE = 0x1000000 #GMC 500+
 
 
 def _ensure_conn() -> Serial:
-    return connect()
+    return startup.connect()
 
 
 def read_exact(n: int) -> bytes:
     serial_con = _ensure_conn()
     buf = bytearray()
     while len(buf) < n:
-        chunk = serial_con.read(n - len(buf))
+        try:
+            chunk = serial_con.read(n - len(buf))
+        except SerialException as exc:
+            startup.invalidate_connection()
+            raise SerialException(f"Error during read: {exc}")
         if not chunk:
             raise OSError(f"Timeout/EOF while reading {n} bytes (got {len(buf)})")
+
         buf += chunk
     return bytes(buf)
 
@@ -37,4 +42,8 @@ def read_u32_be() -> int:
 
 def write(data: bytes) -> None:
     ser = _ensure_conn()
-    ser.write(data)
+    try:
+        ser.write(data)
+    except SerialException as exc:
+        startup.invalidate_connection()
+        raise SerialException(f"Error during write: {exc}")

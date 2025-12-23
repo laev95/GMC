@@ -18,9 +18,6 @@ class ConnConfig:
 
 
 def _check_ports() -> dict[str, str]:
-    """
-    Private helper: findet Kandidatenports.
-    """
     possible: dict[str, str] = {}
     for port in list_ports.comports():
         if port.product == "USB Serial":
@@ -41,16 +38,24 @@ def _get_connection_config() -> ConnConfig:
     return ConnConfig(port=possible_port)
 
 
-def connect() -> Serial:
+def connect() -> Serial | None:
     global _CONN
     if _CONN is not None:
         return _CONN
 
-    cfg = _get_connection_config()
     try:
+        cfg = _get_connection_config()
         _CONN = Serial(port=cfg.port, baudrate=cfg.baud_rate, stopbits=cfg.stop_bits)
-    except SerialException as exc:
-        print(f"Failed to connect to device: {exc}")
-        quit(1)
+    except (OSError, SerialException) as (os_exc, ser_exc):
+        if os_exc:
+            print(f"Error: {os_exc}")
+        if ser_exc:
+            print(f"Failed to connect to device: {ser_exc}")
+        return None
 
     return _CONN
+
+
+def invalidate_connection():
+    global _CONN
+    _CONN = None
