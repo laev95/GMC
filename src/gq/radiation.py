@@ -1,5 +1,6 @@
 from src.gq.core_util.core import write, read_u32_be
 
+
 def get_cpm() -> int:
     """
     RFC1801: <GETCPM>> liefert CPM als 4 Bytes (unsigned, big-endian).
