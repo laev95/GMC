@@ -15,10 +15,10 @@ def _ensure_conn() -> Serial:
 
 
 def read_exact(n: int) -> bytes:
-    ser = _ensure_conn()
+    serial_con = _ensure_conn()
     buf = bytearray()
     while len(buf) < n:
-        chunk = ser.read(n - len(buf))
+        chunk = serial_con.read(n - len(buf))
         if not chunk:
             raise OSError(f"Timeout/EOF while reading {n} bytes (got {len(buf)})")
         buf += chunk
