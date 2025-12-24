@@ -32,7 +32,7 @@ def _get_connection_config() -> ConnConfig:
     if not _PORTS:
         _PORTS = _check_ports()
         if not _PORTS:
-            raise OSError("No device found")
+            return ConnConfig("")
 
     possible_port = next(iter(_PORTS.values()))
     return ConnConfig(port=possible_port)
@@ -40,19 +40,15 @@ def _get_connection_config() -> ConnConfig:
 
 def connect() -> Serial | None:
     global _CONN
+
     if _CONN is not None:
         return _CONN
 
-    try:
-        cfg = _get_connection_config()
-        _CONN = Serial(port=cfg.port, baudrate=cfg.baud_rate, stopbits=cfg.stop_bits)
-    except (OSError, SerialException) as (os_exc, ser_exc):
-        if os_exc:
-            print(f"Error: {os_exc}")
-        if ser_exc:
-            print(f"Failed to connect to device: {ser_exc}")
+    cfg = _get_connection_config()
+    if cfg.port == "":
         return None
 
+    _CONN = Serial(port=cfg.port, baudrate=cfg.baud_rate, stopbits=cfg.stop_bits)
     return _CONN
 
 

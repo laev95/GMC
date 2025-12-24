@@ -11,7 +11,10 @@ FLASH_SIZE = 0x1000000 #GMC 500+
 
 
 def _ensure_conn() -> Serial:
-    return startup.connect()
+    conn = startup.connect()
+    if conn is None:
+        raise OSError("Kein Gerät gefunden oder Verbindung konnte nicht hergestellt werden.")
+    return conn
 
 
 def read_exact(n: int) -> bytes:
