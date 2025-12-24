@@ -21,7 +21,7 @@ def _check_ports() -> dict[str, str]:
     possible: dict[str, str] = {}
     for port in list_ports.comports():
         if port.product == "USB Serial":
-            model = port.device
+            model = port.name
             print(f"Found candidate on {port.device}")
             possible[model] = port.device
     return possible
@@ -54,4 +54,9 @@ def connect() -> Serial | None:
 
 def invalidate_connection():
     global _CONN
+    if _CONN:
+        try:
+            _CONN.close()
+        except (SerialException, OSError):
+            pass
     _CONN = None
