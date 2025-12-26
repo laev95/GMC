@@ -20,10 +20,9 @@ class ConnConfig:
 def _check_ports() -> dict[str, str]:
     possible: dict[str, str] = {}
     for port in list_ports.comports():
-        if port.product == "USB Serial":
-            model = port.name
+        if "USB" in port.device or "COM" in port.device: # TODO check MacOS
             print(f"Found candidate on {port.device}")
-            possible[model] = port.device
+            possible[port.name] = port.device
     return possible
 
 
