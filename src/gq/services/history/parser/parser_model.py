@@ -22,7 +22,6 @@ class Reading(IntEnum):
 
 @dataclass
 class Segment:
-    """A contiguous run with a certain decoding mode."""
     mode: str  # "single"/"double"/"triple"/"quadruple"/"ascii"
     values: List[Union[int, str]] = field(default_factory=list)
 

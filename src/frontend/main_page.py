@@ -1,7 +1,9 @@
 from nicegui import ui
 from serial.serialutil import SerialException
-from src.gq.radiation import get_cpm, get_cps, get_max_cps, get_cpm_high_tube, get_cpm_low_tube
+from src.gq.device import GMCDevice
 
+device = GMCDevice()
+device.auto_connect()
 
 @ui.refreshable
 def app():
@@ -16,20 +18,22 @@ def app():
     is_active, set_is_active = ui.state(False)
     connection_status, set_connection_status = ui.state(True)
 
+
     def update_data():
         try:
             new_values = {
-                'cpm': get_cpm(),
-                'cps': get_cps(),
-                'max_cps': get_max_cps(),
-                'cpm_high': get_cpm_high_tube(),
-                'cpm_low': get_cpm_low_tube()
+                'cpm': device.radiation.get_cpm(),
+                'cps': device.radiation.get_cps(),
+                'max_cps': device.radiation.get_max_cps(),
+                'cpm_high': device.radiation.get_cpm_high_tube(),
+                'cpm_low': device.radiation.get_cpm_low_tube()
             }
             set_radiation_data(new_values)
             set_connection_status(True)
         except (SerialException, OSError) as e:
             ui.notify(f"Fehler beim Lesen der Daten: {e}", type='negative')
             set_is_active(False)
+
 
     with ui.card().classes('w-full max-w-md mx-auto'):
         ui.label('GQ GMC Strahlungswerte').classes('text-h5 mb-4')
