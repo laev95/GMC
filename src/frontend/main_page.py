@@ -15,7 +15,6 @@ def app():
 
     is_active, set_is_active = ui.state(False)
     connection_status, set_connection_status = ui.state(True)
-    last_error, set_last_error = ui.state("")
 
     def update_data():
         try:
@@ -30,7 +29,7 @@ def app():
             set_connection_status(True)
         except (SerialException, OSError) as e:
             ui.notify(f"Fehler beim Lesen der Daten: {e}", type='negative')
-            set_last_error(str(e))
+            set_is_active(False)
 
     with ui.card().classes('w-full max-w-md mx-auto'):
         ui.label('GQ GMC Strahlungswerte').classes('text-h5 mb-4')
