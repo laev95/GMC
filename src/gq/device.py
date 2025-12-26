@@ -4,9 +4,12 @@ from .services.history.history import HistoryService
 
 class GMCDevice:
     def __init__(self):
-        self.manager = SerialManager()
-        self.radiation = RadiationService(self.manager)
-        self.history = HistoryService(self.manager)
+        self._manager = SerialManager()
+        self.radiation = RadiationService(self._manager)
+        self.history = HistoryService(self._manager)
 
     def auto_connect(self) -> bool:
-        return self.manager.connect()
+        return self._manager.connect()
+
+    def disconnect(self) -> None:
+        self._manager.disconnect()

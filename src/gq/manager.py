@@ -51,6 +51,15 @@ class SerialManager:
             self._conn = None
             return False
 
+    def disconnect(self) -> None:
+        if self._conn:
+            try:
+                self._conn.close()
+            except (SerialException, OSError):
+                pass
+            finally:
+                self._conn = None
+
     def write(self, data: bytes):
         if not self._conn: raise ConnectionError("Nicht verbunden")
         self._conn.write(data)

@@ -7,6 +7,8 @@ device.auto_connect()
 
 @ui.refreshable
 def app():
+    app.on_shutdown(lambda: device.disconnect())
+
     radiation_data, set_radiation_data = ui.state({
         'cpm': 0,
         'cps': 0,
@@ -17,7 +19,6 @@ def app():
 
     is_active, set_is_active = ui.state(False)
     connection_status, set_connection_status = ui.state(True)
-
 
     def update_data():
         try:
@@ -33,7 +34,6 @@ def app():
         except (SerialException, OSError) as e:
             ui.notify(f"Fehler beim Lesen der Daten: {e}", type='negative')
             set_is_active(False)
-
 
     with ui.card().classes('w-full max-w-md mx-auto'):
         ui.label('GQ GMC Strahlungswerte').classes('text-h5 mb-4')
