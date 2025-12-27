@@ -1,10 +1,12 @@
 import asyncio
+from dataclasses import dataclass, field
+from typing import Dict
 
 from nicegui import ui, app
 from serial.serialutil import SerialException
+
 from src.gq.device import GMCDevice
-from dataclasses import dataclass, field
-from typing import Dict
+
 
 device = GMCDevice()
 
@@ -28,6 +30,7 @@ def fetch_data():
         'cpm_low': device.radiation.get_cpm_low_tube()
     }
 
+
 async def device_main_loop():
     while True:
         result = device.auto_connect()
@@ -42,12 +45,15 @@ async def device_main_loop():
 
         except (SerialException, OSError) as e:
             ui.notify(f"Fehler beim Lesen der Daten: {e}", type='negative')
-            state.connection_status = False
-            state.is_active = False
-            device.disconnect()
+            if not device.auto_connect():
+                state.connection_status = False
+                state.is_active = False
+                device.disconnect()
+            else:
+                ui.notify("Verbindung wiederhergestellt", type='positive')
 
         await app_ui.refresh()
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
 
 
 @ui.refreshable
