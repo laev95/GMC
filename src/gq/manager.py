@@ -68,14 +68,12 @@ class SerialManager:
                 self._conn = None
 
     def write(self, data: bytes):
-        if not self._conn or not self._conn.is_open: raise ConnectionError("Nicht verbunden")
         self._conn.write(data)
 
     def read_exact(self, n: int) -> bytes:
-        if not self._conn or not self._conn.is_open: raise ConnectionError("Nicht verbunden")
         data = self._conn.read(n)
         if len(data) < n:
-            raise IOError(f"Timeout: Erwartet {n} Bytes, erhalten {len(data)}")
+            raise OSError(f"Timeout: Erwartet {n} Bytes, erhalten {len(data)}")
         return data
 
     def read_u32_be(self) -> int:

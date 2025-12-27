@@ -49,7 +49,7 @@ async def device_main_loop():
             if state.is_active:
                 await loop.run_in_executor(None, fetch_data)
 
-        except (SerialException, OSError, ConnectionError) as e:
+        except (SerialException, OSError) as e:
             state.connection_status = False
             state.is_active = False
             state.error_message = f"Verbindung verloren: {e}"
