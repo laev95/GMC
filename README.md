@@ -16,7 +16,6 @@ Das Interface ist primär für das Modell **GMC-500+** konzipiert, unterstützt 
 ## Features
 
 - **Echtzeit-CPM-Anzeige:** Verfolgen Sie die Counts Per Minute (CPM) direkt im Browser.
-- **Geräteinformationen:** Auslesen von Hardware-Modell, Firmware-Version und Batteriespannung.
 - **Automatische Verbindung:** Sucht automatisch nach angeschlossenen Geräten am USB-Port.
 
 ## Installation
