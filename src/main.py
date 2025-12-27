@@ -1,8 +1,8 @@
-from frontend.main_page import app, ui
+from frontend.main_page import app_ui, ui
 
 
 def main():
-    app()
+    app_ui()
     ui.run()
 
 
