@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ConnConfig:
-    port: str
+    port: str | None
     baud_rate: int = 115200
     stop_bits: int = 1
 
@@ -15,7 +15,7 @@ class SerialManager:
         self.ACK = 0xAA
 
     @staticmethod
-    def discover_ports() -> dict[str, str]:
+    def _discover_ports() -> dict[str, str]:
         possible: dict[str, str] = {}
         for port in list_ports.comports():
             if "USB" in port.device or "COM" in port.device:
@@ -23,20 +23,24 @@ class SerialManager:
         return possible
 
     def _get_default_config(self) -> ConnConfig:
-        ports = self.discover_ports()
+        ports = self._discover_ports()
         if not ports:
-            return ConnConfig(port="")
+            return ConnConfig(port=None)
 
         first_port_device = next(iter(ports.values()))
         return ConnConfig(port=first_port_device)
 
-    def connect(self, cfg: ConnConfig | None = None) -> bool:
+    def connect(self, cfg: ConnConfig = None) -> bool:
         if self._conn and self._conn.is_open:
             return True
 
-        if cfg is None or cfg.port == "":
+        if self._conn and not self._conn.is_open:
+            self._conn.open()
+            return True
+
+        if not cfg:
             cfg = self._get_default_config()
-            if cfg.port == "":
+            if not cfg.port:
                 return False
 
         try:
@@ -61,11 +65,11 @@ class SerialManager:
                 self._conn = None
 
     def write(self, data: bytes):
-        if not self._conn: raise ConnectionError("Nicht verbunden")
+        if not self._conn or not self._conn.is_open: raise ConnectionError("Nicht verbunden")
         self._conn.write(data)
 
     def read_exact(self, n: int) -> bytes:
-        if not self._conn: raise ConnectionError("Nicht verbunden")
+        if not self._conn or not self._conn.is_open: raise ConnectionError("Nicht verbunden")
         data = self._conn.read(n)
         if len(data) < n:
             raise IOError(f"Timeout: Erwartet {n} Bytes, erhalten {len(data)}")

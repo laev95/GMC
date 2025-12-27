@@ -1,12 +1,17 @@
-from .manager import SerialManager
+from .manager import SerialManager, ConnConfig
 from .services.radiation import RadiationService
 from .services.history.history import HistoryService
+from .services.device_info import DeviceInfoService
 
 class GMCDevice:
     def __init__(self):
         self._manager = SerialManager()
         self.radiation = RadiationService(self._manager)
         self.history = HistoryService(self._manager)
+        self.device_info = DeviceInfoService(self._manager)
+
+    def connect(self, port: str) -> bool:
+        return self._manager.connect(ConnConfig(port=port))
 
     def auto_connect(self) -> bool:
         return self._manager.connect()
