@@ -91,14 +91,16 @@ def app_ui():
         with ui.grid(columns=2).classes('w-full gap-4'):
             with ui.column():
                 ui.label('Standard-Werte').classes('font-bold')
-                ui.label().bind_text_from(state.radiation, backward=lambda d: f"CPM: {d['cpm']}")
-                ui.label().bind_text_from(state.radiation, backward=lambda d: f"CPS: {d['cps']}")
-                ui.label().bind_text_from(state.radiation, backward=lambda d: f"Max CPS: {d['max_cps']}")
+                ui.label(f"CPM: {state.radiation['cpm']}")
+                ui.label(f"CPS: {state.radiation['cps']}")
+                ui.label(f"Max CPS: {state.radiation['max_cps']}")
 
             with ui.column():
                 ui.label('Dual-Tube (GMC-500+)').classes('font-bold')
-                ui.label().bind_text_from(state.radiation, backward=lambda d: f"High Tube CPM: {d['cpm_high']}")
-                ui.label().bind_text_from(state.radiation, backward=lambda d: f"Low Tube CPM: {d['cpm_low']}")
+                ui.label(f"High Tube CPM: {state.radiation['cpm_high']}")
+                ui.label(f"Low Tube CPM: {state.radiation['cpm_low']}")
 
 app.on_startup(lambda: asyncio.create_task(device_main_loop()))
 app.on_shutdown(device.disconnect)
+app.on_shutdown(lambda: setattr(state, 'connection_status', False))
+app.on_shutdown(lambda: setattr(state, 'active', False))
