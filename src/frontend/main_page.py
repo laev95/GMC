@@ -39,6 +39,8 @@ async def device_main_loop():
             result = await loop.run_in_executor(None, device.auto_connect)
             if not result:
                 state.connection_status = False
+                state.is_active = False
+                await app_ui.refresh()
                 await asyncio.sleep(2)
                 continue
 
@@ -54,6 +56,7 @@ async def device_main_loop():
             state.is_active = False
             state.error_message = f"Verbindung verloren: {e}"
             device.disconnect()
+            await app_ui.refresh()
             await asyncio.sleep(2)
 
         await app_ui.refresh()
