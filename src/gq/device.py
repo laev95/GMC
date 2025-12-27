@@ -1,7 +1,8 @@
 from .manager import SerialManager, ConnConfig
-from .services.radiation import RadiationService
-from .services.history.history import HistoryService
 from .services.device_info import DeviceInfoService
+from .services.history.history import HistoryService
+from .services.radiation import RadiationService
+
 
 class GMCDevice:
     def __init__(self):

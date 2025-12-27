@@ -1,7 +1,10 @@
 from __future__ import annotations
+
+from dataclasses import dataclass
+
 from serial import Serial, SerialException
 from serial.tools import list_ports
-from dataclasses import dataclass
+
 
 @dataclass(frozen=True)
 class ConnConfig:
