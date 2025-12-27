@@ -37,21 +37,35 @@ pip install nicegui pyserial
 ## Benutzung
 
 1. Verbinden Sie Ihren GMC Geigerzähler über USB mit Ihrem Computer.
-2. Starten Sie die Anwendung:
+2. Starten Sie die Anwendung. Stellen Sie sicher, dass das Projektverzeichnis im `PYTHONPATH` enthalten ist, damit die Module korrekt gefunden werden.
 
+**Linux / macOS:**
 ```bash
+export PYTHONPATH=$PYTHONPATH:$(pwd)
 python src/main.py
 ```
+
+Alternativ in einem Befehl:
+```bash
+PYTHONPATH=. python src/main.py
+```
+
+**Windows (Eingabeaufforderung / CMD):**
+```cmd
+set PYTHONPATH=%PYTHONPATH%;.
+python src/main.py
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:PYTHONPATH += ";."
+python src/main.py
+```
+
+> **Hinweis:** Ein Ausführungsskript wird in Zukunft hinzugefügt, um diesen manuellen Schritt zu automatisieren.
 
 3. Öffnen Sie Ihren Browser und navigieren Sie zu der in der Konsole angezeigten Adresse (standardmäßig `http://localhost:8080`).
 
 ## Dokumentation
 
 Die Kommunikation basiert auf dem offiziellen GQ-RFC1801 Protokoll. Eine Kopie der Spezifikation befindet sich im Ordner `docs/`.
-
-## Projektstruktur
-
-- `src/main.py`: Einstiegspunkt der Anwendung.
-- `src/frontend/`: Enthält die Web-UI Definitionen (NiceGUI).
-- `src/gq/`: Kernlogik für die Kommunikation mit dem Geigerzähler.
-- `docs/`: Technische Dokumentation und Protokollspezifikationen.
