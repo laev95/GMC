@@ -61,7 +61,7 @@ $env:PYTHONPATH += ";."
 python src/main.py
 ```
 
-> **Hinweis:** Ein Ausführungsskript wird in Zukunft hinzugefügt, um diesen manuellen Schritt zu automatisieren.
+> **Hinweis:** Ein Ausführungsskript wird in Zukunft hinzugefügt, um diesen Schritt zu automatisieren.
 
 3. Öffnen Sie Ihren Browser und navigieren Sie zu der in der Konsole angezeigten Adresse (standardmäßig `http://localhost:8080`).
 
