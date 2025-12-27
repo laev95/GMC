@@ -87,5 +87,5 @@ def app_ui():
                 ui.label().bind_text_from(state.radiation, backward=lambda d: f"High Tube CPM: {d['cpm_high']}")
                 ui.label().bind_text_from(state.radiation, backward=lambda d: f"Low Tube CPM: {d['cpm_low']}")
 
-app.on_startup(device_main_loop)
+app.on_startup(lambda: asyncio.create_task(device_main_loop()))
 app.on_shutdown(device.disconnect)
