@@ -12,7 +12,20 @@ class ConnConfig:
     baud_rate: int = 115200
     stop_bits: int = 1
 
+
 class SerialManager:
+    """
+    Manages serial communication with external devices.
+
+    This class provides functionality for detecting available serial ports,
+    connecting to a serial device, sending and receiving data, and closing
+    the connection. It can handle default configurations and includes support
+    for reading specific data formats.
+
+    :ivar ACK: Acknowledgment byte used for communication validation.
+    :type ACK: int
+    """
+
     def __init__(self):
         self._conn: Serial | None = None
         self.ACK = 0xAA
@@ -73,7 +86,7 @@ class SerialManager:
     def read_exact(self, n: int) -> bytes:
         data = self._conn.read(n)
         if len(data) < n:
-            raise OSError(f"Timeout: Erwartet {n} Bytes, erhalten {len(data)}")
+            raise OSError(f"Timeout: Expected {n} bytes, received {len(data)}")
         return data
 
     def read_u32_be(self) -> int:

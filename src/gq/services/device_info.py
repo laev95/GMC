@@ -9,15 +9,15 @@ if TYPE_CHECKING:
 class DeviceInfoService:
     def __init__(self, manager: SerialManager):
         """
-        Initialisiert den Service mit einem SerialManager.
+        Initializes the service with a SerialManager.
 
-        :param manager: Die zentrale Kommunikationsinstanz.
+        :param manager: The central communication instance.
         """
         self._manager = manager
 
     def get_hardware_model(self) -> str:
         """
-        RFC1801: <GETVER>> liefert die Hardware/Version als ASCII-String (typ. 15 Bytes).
+        RFC1801: <GETVER>> returns the hardware/version as an ASCII string (typically 15 bytes).
         """
         self._manager.write(b"<GETVER>>")
         response = self._manager.read_exact(15)
@@ -25,14 +25,14 @@ class DeviceInfoService:
 
     def get_serial_number_bytes(self) -> bytes:
         """
-        RFC1801: <GETSERIAL>> liefert 7 Bytes (Seriennummer im Geräteformat).
+        RFC1801: <GETSERIAL>> returns 7 bytes (serial number in device format).
         """
         self._manager.write(b"<GETSERIAL>>")
         return self._manager.read_exact(7)
 
     def get_voltage(self) -> str:
         """
-        RFC1801: <GETVOLT>> liefert die Versorgungsspannung als ASCII (typ. 5 Bytes).
+        RFC1801: <GETVOLT>> returns the supply voltage as ASCII (typically 5 bytes).
         """
         self._manager.write(b"<GETVOLT>>")
         return self._manager.read_exact(5).decode()

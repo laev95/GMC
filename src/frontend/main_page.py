@@ -55,7 +55,7 @@ async def device_main_loop():
         except (SerialException, OSError) as e:
             state.is_connected = False
             state.is_active = False
-            state.error_message = f"Verbindung verloren: {e}"
+            state.error_message = f"Connection lost: {e}"
             device.disconnect()
             await app_ui.refresh()
             await asyncio.sleep(2)
@@ -86,7 +86,7 @@ def app_ui():
 
     with ui.card().classes('w-full max-w-md mx-auto'):
         with ui.row().classes('items-center w-full justify-between mb-4'):
-            ui.label('GQ GMC Strahlungswerte').classes('text-h5')
+            ui.label('GQ GMC Radiation Values').classes('text-h5')
             ui.icon('circle', color='green' if state.is_connected else 'red').classes('text-2xl')
 
         with ui.row().classes('items-center pb-4'):
@@ -95,11 +95,11 @@ def app_ui():
                 on_click=toggle_active
             ).props(f'icon={"stop" if state.is_active else "play_arrow"}')
 
-            ui.button("Einmalig aktualisieren", on_click=lambda: [fetch_data(), app_ui.refresh()]).props('outline icon=refresh')
+            ui.button("Update once", on_click=lambda: [fetch_data(), app_ui.refresh()]).props('outline icon=refresh')
 
         with ui.grid(columns=2).classes('w-full gap-4'):
             with ui.column():
-                ui.label('Standard-Werte').classes('font-bold')
+                ui.label('Standard Values').classes('font-bold')
                 ui.label(f"CPM: {state.radiation['cpm']}")
                 ui.label(f"CPS: {state.radiation['cps']}")
                 ui.label(f"Max CPS: {state.radiation['max_cps']}")

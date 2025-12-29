@@ -1,13 +1,13 @@
 # GQ GMC Web-Interface
 
-Ein Python-basiertes Projekt zur Interaktion mit GQ GMC Geigerzählern über ein modernes Web-Interface.
+A Python-based project for interacting with GQ GMC Geiger counters via a modern web interface.
 
-## Projektübersicht
+## Project Overview
 
-Dieses Projekt bietet eine grafische Benutzeroberfläche (Web-GUI), um Daten von GQ GMC Geigerzählern auszulesen und das Gerät zu steuern. Es nutzt das GQ Geiger Counter Communication Protocol (RFC1801).
+This project provides a graphical user interface (Web-GUI) to read data from GQ GMC Geiger counters and control the device. It uses the GQ Geiger Counter Communication Protocol (RFC1801).
 
-### Unterstützte Modelle
-Das Interface ist primär für das Modell **GMC-500+** konzipiert, unterstützt aber die gesamte Reihe:
+### Supported Models
+The interface is primarily designed for the **GMC-500+** model but supports the entire series:
 - GMC-500
 - GMC-500+
 - GMC-600
@@ -15,28 +15,28 @@ Das Interface ist primär für das Modell **GMC-500+** konzipiert, unterstützt 
 
 ## Features
 
-- **Echtzeit-CPM-Anzeige:** Verfolgen Sie die Counts Per Minute (CPM) direkt im Browser.
-- **Automatische Verbindung:** Sucht automatisch nach angeschlossenen Geräten am USB-Port.
+- **Real-time CPM Display:** Track Counts Per Minute (CPM) directly in the browser.
+- **Automatic Connection:** Automatically searches for connected devices on the USB port.
 
 ## Installation
 
-### Voraussetzungen
+### Prerequisites
 
 - Python 3.8+
-- Ein GQ GMC Geigerzähler (verbunden via USB)
+- A GQ GMC Geiger counter (connected via USB)
 
-### Abhängigkeiten installieren
+### Installing Dependencies
 
-Das Projekt verwendet `NiceGUI` für das Frontend und `pyserial` für die Kommunikation. Installieren Sie die benötigten Pakete mit:
+The project uses `NiceGUI` for the frontend and `pyserial` for communication. Install the required packages with:
 
 ```bash
 pip install nicegui pyserial
 ```
 
-## Benutzung
+## Usage
 
-1. Verbinden Sie Ihren GMC Geigerzähler über USB mit Ihrem Computer.
-2. Starten Sie die Anwendung. Stellen Sie sicher, dass das Projektverzeichnis im `PYTHONPATH` enthalten ist, damit die Module korrekt gefunden werden.
+1. Connect your GMC Geiger counter to your computer via USB.
+2. Start the application. Ensure that the project directory is included in the `PYTHONPATH` so that modules are found correctly.
 
 **Linux / macOS:**
 ```bash
@@ -44,12 +44,12 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 python src/main.py
 ```
 
-Alternativ in einem Befehl:
+Alternatively in one command:
 ```bash
 PYTHONPATH=. python src/main.py
 ```
 
-**Windows (Eingabeaufforderung / CMD):**
+**Windows (Command Prompt / CMD):**
 ```cmd
 set PYTHONPATH=%PYTHONPATH%;.
 python src/main.py
@@ -61,10 +61,10 @@ $env:PYTHONPATH += ";."
 python src/main.py
 ```
 
-> **Hinweis:** Ein Ausführungsskript wird in Zukunft hinzugefügt, um diesen Schritt zu automatisieren.
+> **Note:** An execution script will be added in the future to automate this step.
 
-3. Öffnen Sie Ihren Browser und navigieren Sie zu der in der Konsole angezeigten Adresse (standardmäßig `http://localhost:8080`).
+3. Open your browser and navigate to the address displayed in the console (default is `http://localhost:8080`).
 
-## Dokumentation
+## Documentation
 
-Die Kommunikation basiert auf dem offiziellen GQ-RFC1801 Protokoll. Eine Kopie der Spezifikation befindet sich im Ordner `docs/`.
+Communication is based on the official GQ-RFC1801 protocol. A copy of the specification can be found in the `docs/` folder.

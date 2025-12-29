@@ -7,49 +7,49 @@ if TYPE_CHECKING:
 
 class RadiationService:
     """
-    Service für strahlungsbezogene Messwerte eines GQ GMC Geigerzählers.
-    Kapselt die Befehle gemäß RFC1801.
+    Service for radiation-related measured values of a GQ GMC Geiger counter.
+    Encapsulates the commands according to RFC1801.
     """
 
     def __init__(self, manager: SerialManager):
         """
-        Initialisiert den Service mit einem SerialManager.
+        Initializes the service with a SerialManager.
 
-        :param manager: Die zentrale Kommunikationsinstanz.
+        :param manager: The central communication instance.
         """
         self._manager = manager
 
     def get_cpm(self) -> int:
         """
-        RFC1801: <GETCPM>> liefert CPM als 4 Bytes (unsigned, big-endian).
+        RFC1801: <GETCPM>> returns CPM as 4 bytes (unsigned, big-endian).
         """
         self._manager.write(b"<GETCPM>>")
         return self._manager.read_u32_be()
 
     def get_cps(self) -> int:
         """
-        RFC1801: <GETCPS>> liefert CPS als 4 Bytes (unsigned, big-endian).
+        RFC1801: <GETCPS>> returns CPS as 4 bytes (unsigned, big-endian).
         """
         self._manager.write(b"<GETCPS>>")
         return self._manager.read_u32_be()
 
     def get_max_cps(self) -> int:
         """
-        RFC1801: <GETMAXCPS>> liefert den maximalen CPS seit Einschalten als 4 Bytes u32 (big-endian).
+        RFC1801: <GETMAXCPS>> returns the maximum CPS since power-on as 4 bytes u32 (big-endian).
         """
         self._manager.write(b"<GETMAXCPS>>")
         return self._manager.read_u32_be()
 
     def get_cpm_high_tube(self) -> int:
         """
-        RFC1801: <GETCPMH>> (GMC-500+ / Modelle mit High-Dose-Tube) liefert CPM High-Tube als 4 Bytes u32.
+        RFC1801: <GETCPMH>> (GMC-500+ / models with high-dose tube) returns CPM high-tube as 4 bytes u32.
         """
         self._manager.write(b"<GETCPMH>>")
         return self._manager.read_u32_be()
 
     def get_cpm_low_tube(self) -> int:
         """
-        RFC1801: <GETCPML>> (GMC-500+ / Modelle mit Low-Dose-Tube) liefert CPM Low-Tube als 4 Bytes u32.
+        RFC1801: <GETCPML>> (GMC-500+ / models with low-dose tube) returns CPM low-tube as 4 bytes u32.
         """
         self._manager.write(b"<GETCPML>>")
         return self._manager.read_u32_be()

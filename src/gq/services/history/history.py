@@ -12,21 +12,21 @@ if TYPE_CHECKING:
 
 class HistoryService:
     """
-    Service zum Auslesen des internen Flash-Speichers (History) des GQ GMC.
-    Kapselt die <SPIR>> Befehle gemäß RFC1801.
+    Service for reading the internal flash memory (history) of the GQ GMC.
+    Encapsulates the <SPIR>> commands according to RFC1801.
     """
 
     def __init__(self, manager: SerialManager, flash_size: int = 0x1000000):
         """
-        :param manager: Die zentrale Kommunikationsinstanz.
-        :param flash_size: Die Größe des Flash-Speichers (Standard GMC-500+: 16MB).
+        :param manager: The central communication instance.
+        :param flash_size: The size of the flash memory (Default GMC-500+: 16MB).
         """
         self._manager = manager
         self._flash_size = flash_size
 
     def _spir_read(self, addr: int, length: int) -> bytes:
         """
-        Liest einen spezifischen Block aus dem Flash-Speicher.
+        Reads a specific block from the flash memory.
         """
         if not (0 <= addr <= 0xFFFFFF):
             raise ValueError("addr must be 0..0xFFFFFF")
@@ -34,7 +34,7 @@ class HistoryService:
             raise ValueError("length must be 1..4096")
 
         # RFC1801: <SPIR[A2][A1][A0][L1][L0]>>
-        # A2-A0 sind 3 Bytes Adresse, L1-L0 sind 2 Bytes Länge.
+        # A2-A0 are 3 bytes address, L1-L0 are 2 bytes length.
         cmd = pack(">BBBH",
                    (addr >> 16) & 0xFF,
                    (addr >> 8) & 0xFF,
@@ -46,7 +46,7 @@ class HistoryService:
 
     def _iter_history_bytes(self, block_size: int = 4096, min_ff_tail: int = 512) -> Iterator[bytes]:
         """
-        Iteriert über den Flash-Speicher, bis keine Daten mehr vorhanden sind.
+        Iterates over the flash memory until no more data is present.
         """
         addr = 0x000000
 
@@ -72,12 +72,12 @@ class HistoryService:
                 return
 
     def _get_history_bytes(self) -> bytes:
-        """Sammelt alle History-Bytes in einem Stream."""
+        """Collects all history bytes in a stream."""
         return b"".join(self._iter_history_bytes())
 
     def get_history(self):
         """
-        Liest den gesamten Verlauf aus und nutzt den bestehenden Parser.
+        Reads the entire history and uses the existing parser.
         """
         raw = self._get_history_bytes()
         return parse_gmc_history(raw)
