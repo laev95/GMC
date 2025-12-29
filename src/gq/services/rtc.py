@@ -1,11 +1,15 @@
+from __future__ import annotations
 from dataclasses import dataclass
-from src.gq.core_util.core import write, read_ack, read_exact, ACK
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.gq.manager import SerialManager
 
 @dataclass(frozen=True)
 class DeviceDateTime:
     """
-    Datenträger für <GETDATETIME>>.
-    year_since_2000: 0 entspricht Jahr 2000.
+    Data carrier for <GETDATETIME>>.
+    year_since_2000: 0 corresponds to the year 2000.
     """
     year_since_2000: int
     month: int
@@ -15,116 +19,124 @@ class DeviceDateTime:
     second: int
 
 
-def get_datetime() -> DeviceDateTime:
+class RTCService:
     """
-    RFC1801: <GETDATETIME>> liefert 7 Bytes:
-      YY MM DD HH MM SS 0xAA
+    Service for real-time clock (RTC) related commands of a GQ GMC Geiger counter.
+    Encapsulates the commands according to RFC1801.
     """
-    write(b"<GETDATETIME>>")
-    data = read_exact(7)
-    if len(data) != 7:
-        raise OSError(f"Expected 7 bytes, got {len(data)}")
-    yy, mm, dd, hh, mi, ss, ack = data
-    if ack != ACK:
-        raise OSError(f"Expected ack 0xAA as last byte, got 0x{ack:02X}")
-    return DeviceDateTime(yy, mm, dd, hh, mi, ss)
 
+    def __init__(self, manager: SerialManager):
+        """
+        Initializes the service with a SerialManager.
 
-def set_date_year(year_since_2000: int) -> bool:
-    """
-    RFC1801: <SETDATEYY[D0]>> setzt Jahr (seit 2000 als 1 Byte).
-    Rückgabe: 0xAA (ACK)
-    """
-    if not (0 <= year_since_2000 <= 0xFF):
-        raise ValueError("year_since_2000 must be 0..255 (0=2000)")
-    write(b"<SETDATEYY" + bytes([year_since_2000]) + b">>")
-    return read_ack()
+        :param manager: The central communication instance.
+        """
+        self._manager = manager
 
+    def get_datetime(self) -> DeviceDateTime:
+        """
+        RFC1801: <GETDATETIME>> returns 7 bytes:
+          YY MM DD HH MM SS 0xAA
+        """
+        self._manager.write(b"<GETDATETIME>>")
+        data = self._manager.read_exact(7)
+        if len(data) != 7:
+            raise OSError(f"Expected 7 bytes, got {len(data)}")
+        yy, mm, dd, hh, mi, ss, ack = data
+        if ack != self._manager.ACK:
+            raise OSError(f"Expected ack 0xAA as last byte, got 0x{ack:02X}")
+        return DeviceDateTime(yy, mm, dd, hh, mi, ss)
 
-def set_date_month(month: int) -> bool:
-    """
-    RFC1801: <SETDATEMM[D0]>> setzt Monat (1..12).
-    Rückgabe: 0xAA (ACK)
-    """
-    if not (1 <= month <= 12):
-        raise ValueError("month must be 1..12")
-    write(b"<SETDATEMM" + bytes([month]) + b">>")
-    return read_ack()
+    def set_date_year(self, year_since_2000: int) -> bool:
+        """
+        RFC1801: <SETDATEYY[D0]>> sets the year (since 2000 as 1 byte).
+        Returns: 0xAA (ACK)
+        """
+        if not (0 <= year_since_2000 <= 0xFF):
+            raise ValueError("year_since_2000 must be 0..255 (0=2000)")
+        self._manager.write(b"<SETDATEYY" + bytes([year_since_2000]) + b">>")
+        return self._manager.read_ack()
 
+    def set_date_month(self, month: int) -> bool:
+        """
+        RFC1801: <SETDATEMM[D0]>> sets the month (1..12).
+        Returns: 0xAA (ACK)
+        """
+        if not (1 <= month <= 12):
+            raise ValueError("month must be 1..12")
+        self._manager.write(b"<SETDATEMM" + bytes([month]) + b">>")
+        return self._manager.read_ack()
 
-def set_date_day(day: int) -> bool:
-    """
-    RFC1801: <SETDATEDD[D0]>> setzt Tag (1..31).
-    Rückgabe: 0xAA (ACK)
-    """
-    if not (1 <= day <= 31):
-        raise ValueError("day must be 1..31")
-    write(b"<SETDATEDD" + bytes([day]) + b">>")
-    return read_ack()
+    def set_date_day(self, day: int) -> bool:
+        """
+        RFC1801: <SETDATEDD[D0]>> sets the day (1..31).
+        Returns: 0xAA (ACK)
+        """
+        if not (1 <= day <= 31):
+            raise ValueError("day must be 1..31")
+        self._manager.write(b"<SETDATEDD" + bytes([day]) + b">>")
+        return self._manager.read_ack()
 
+    def set_time_hour(self, hour: int) -> bool:
+        """
+        RFC1801: <SETTIMEHH[D0]>> sets the hour (0..23).
+        Returns: 0xAA (ACK)
+        """
+        if not (0 <= hour <= 23):
+            raise ValueError("hour must be 0..23")
+        self._manager.write(b"<SETTIMEHH" + bytes([hour]) + b">>")
+        return self._manager.read_ack()
 
-def set_time_hour(hour: int) -> bool:
-    """
-    RFC1801: <SETTIMEHH[D0]>> setzt Stunde (0..23).
-    Rückgabe: 0xAA (ACK)
-    """
-    if not (0 <= hour <= 23):
-        raise ValueError("hour must be 0..23")
-    write(b"<SETTIMEHH" + bytes([hour]) + b">>")
-    return read_ack()
+    def set_time_minute(self, minute: int) -> bool:
+        """
+        RFC1801: <SETTIMEMM[D0]>> sets the minute (0..59).
+        Returns: 0xAA (ACK)
+        """
+        if not (0 <= minute <= 59):
+            raise ValueError("minute must be 0..59")
+        self._manager.write(b"<SETTIMEMM" + bytes([minute]) + b">>")
+        return self._manager.read_ack()
 
+    def set_time_second(self, second: int) -> bool:
+        """
+        RFC1801: <SETTIMESS[D0]>> sets the second (0..59).
+        Returns: 0xAA (ACK)
+        """
+        if not (0 <= second <= 59):
+            raise ValueError("second must be 0..59")
+        self._manager.write(b"<SETTIMESS" + bytes([second]) + b">>")
+        return self._manager.read_ack()
 
-def set_time_minute(minute: int) -> bool:
-    """
-    RFC1801: <SETTIMEMM[D0]>> setzt Minute (0..59).
-    Rückgabe: 0xAA (ACK)
-    """
-    if not (0 <= minute <= 59):
-        raise ValueError("minute must be 0..59")
-    write(b"<SETTIMEMM" + bytes([minute]) + b">>")
-    return read_ack()
+    def set_datetime(
+        self,
+        year_since_2000: int,
+        month: int,
+        day: int,
+        hour: int,
+        minute: int,
+        second: int,
+    ) -> bool:
+        """
+        RFC1801: <SETDATETIME[YYMMDDHHMMSS]>> sets date+time in one command.
+        Returns: 0xAA (ACK)
 
+        All fields are transmitted as individual bytes:
+          YY = years since 2000
+          MM,DD,HH,MM,SS as usual
+        """
+        if not (0 <= year_since_2000 <= 0xFF):
+            raise ValueError("year_since_2000 must be 0..255")
+        if not (1 <= month <= 12):
+            raise ValueError("month must be 1..12")
+        if not (1 <= day <= 31):
+            raise ValueError("day must be 1..31")
+        if not (0 <= hour <= 23):
+            raise ValueError("hour must be 0..23")
+        if not (0 <= minute <= 59):
+            raise ValueError("minute must be 0..59")
+        if not (0 <= second <= 59):
+            raise ValueError("second must be 0..59")
 
-def set_time_second(second: int) -> bool:
-    """
-    RFC1801: <SETTIMESS[D0]>> setzt Sekunde (0..59).
-    Rückgabe: 0xAA (ACK)
-    """
-    if not (0 <= second <= 59):
-        raise ValueError("second must be 0..59")
-    write(b"<SETTIMESS" + bytes([second]) + b">>")
-    return read_ack()
-
-
-def set_datetime(
-    year_since_2000: int,
-    month: int,
-    day: int,
-    hour: int,
-    minute: int,
-    second: int,
-) -> bool:
-    """
-    RFC1801: <SETDATETIME[YYMMDDHHMMSS]>> setzt Datum+Zeit in einem Kommando.
-    Rückgabe: 0xAA (ACK)
-
-    Alle Felder werden als einzelne Bytes übertragen:
-      YY = Jahre seit 2000
-      MM,DD,HH,MM,SS wie üblich
-    """
-    if not (0 <= year_since_2000 <= 0xFF):
-        raise ValueError("year_since_2000 must be 0..255")
-    if not (1 <= month <= 12):
-        raise ValueError("month must be 1..12")
-    if not (1 <= day <= 31):
-        raise ValueError("day must be 1..31")
-    if not (0 <= hour <= 23):
-        raise ValueError("hour must be 0..23")
-    if not (0 <= minute <= 59):
-        raise ValueError("minute must be 0..59")
-    if not (0 <= second <= 59):
-        raise ValueError("second must be 0..59")
-
-    payload = bytes([year_since_2000, month, day, hour, minute, second])
-    write(b"<SETDATETIME" + payload + b">>")
-    return read_ack()
+        payload = bytes([year_since_2000, month, day, hour, minute, second])
+        self._manager.write(b"<SETDATETIME" + payload + b">>")
+        return self._manager.read_ack()

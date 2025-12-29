@@ -1,29 +1,46 @@
-from src.gq.core_util.core import write, read_ack
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
-def power_on() -> None:
-    """
-    RFC1801: <POWERON>> schaltet das Gerät ein (bzw. weckt/aktiviert je nach Modell).
-    """
-    write(b"<POWERON>>")
+if TYPE_CHECKING:
+    from src.gq.manager import SerialManager
 
 
-def power_off() -> None:
+class PowerService:
     """
-    RFC1801: <POWEROFF>> schaltet das Gerät aus.
+    Service for power-related commands of a GQ GMC Geiger counter.
+    Encapsulates the commands according to RFC1801.
     """
-    write(b"<POWEROFF>>")
 
+    def __init__(self, manager: SerialManager):
+        """
+        Initializes the service with a SerialManager.
 
-def reboot() -> None:
-    """
-    RFC1801: <REBOOT>> führt einen Neustart aus.
-    """
-    write(b"<REBOOT>>")
+        :param manager: The central communication instance.
+        """
+        self._manager = manager
 
-def factory_reset() -> bool:
-    """
-    RFC1801: <FACTORYRESET>> setzt auf Werkseinstellungen zurück.
-    Rückgabe: 0xAA (ACK)
-    """
-    write(b"<FACTORYRESET>>")
-    return read_ack()
+    def power_on(self) -> None:
+        """
+        RFC1801: <POWERON>> turns the device on (or wakes/activates it depending on the model).
+        """
+        self._manager.write(b"<POWERON>>")
+
+    def power_off(self) -> None:
+        """
+        RFC1801: <POWEROFF>> turns the device off.
+        """
+        self._manager.write(b"<POWEROFF>>")
+
+    def reboot(self) -> None:
+        """
+        RFC1801: <REBOOT>> performs a reboot.
+        """
+        self._manager.write(b"<REBOOT>>")
+
+    def factory_reset(self) -> bool:
+        """
+        RFC1801: <FACTORYRESET>> resets to factory settings.
+        Returns: 0xAA (ACK)
+        """
+        self._manager.write(b"<FACTORYRESET>>")
+        return self._manager.read_ack()
