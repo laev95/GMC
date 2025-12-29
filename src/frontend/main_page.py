@@ -63,6 +63,18 @@ async def device_main_loop():
         await app_ui.refresh()
         await asyncio.sleep(0.5)
 
+
+@ui.refreshable
+def error_banner():
+    with ui.row().classes('bg-red-100 text-red-900 w-full p-4 items-center justify-between mb-4 rounded-lg border border-red-200'):
+        with ui.row().classes('items-center gap-3'):
+            ui.icon('report_problem', color='red-700').classes('text-xl')
+            ui.label(state.error_message).classes('text-sm md:text-base')
+
+            ui.button(on_click=lambda: [setattr(state, 'error_message', None), app_ui.refresh()]) \
+                .props('flat round icon=close').classes('text-red-900 hover:bg-red-200')
+
+
 @ui.refreshable
 def app_ui():
     def toggle_active():
@@ -70,14 +82,7 @@ def app_ui():
         app_ui.refresh()
 
     if state.error_message:
-        with ui.row().classes(
-                'bg-red-100 text-red-900 w-full p-4 items-center justify-between mb-4 rounded-lg border border-red-200'):
-            with ui.row().classes('items-center gap-3'):
-                ui.icon('report_problem', color='red-700').classes('text-xl')
-                ui.label(state.error_message).classes('text-sm md:text-base')
-
-            ui.button(on_click=lambda: [setattr(state, 'error_message', None), app_ui.refresh()]) \
-                .props('flat round icon=close').classes('text-red-900 hover:bg-red-200')
+        error_banner()
 
     with ui.card().classes('w-full max-w-md mx-auto'):
         with ui.row().classes('items-center w-full justify-between mb-4'):
@@ -103,6 +108,7 @@ def app_ui():
                 ui.label('Dual-Tube (GMC-500+)').classes('font-bold')
                 ui.label(f"High Tube CPM: {state.radiation['cpm_high']}")
                 ui.label(f"Low Tube CPM: {state.radiation['cpm_low']}")
+
 
 app.on_startup(lambda: asyncio.create_task(device_main_loop()))
 app.on_shutdown(device.disconnect)
