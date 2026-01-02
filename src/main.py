@@ -1,4 +1,4 @@
-from frontend.main_page import app_ui, ui
+from src.frontend.main_page import app_ui, ui
 
 
 def main():
