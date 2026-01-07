@@ -4,7 +4,7 @@ from __future__ import annotations
 from struct import pack
 from typing import Iterator, TYPE_CHECKING
 
-from src.gq.services.history.parser.parser import parse_gmc_history
+from src.gq.services.history.parser.parser import Parser
 
 if TYPE_CHECKING:
     from src.gq.manager import SerialManager
@@ -84,9 +84,7 @@ class HistoryService:
         Reads the entire history and formats it for display.
         Returns a formatted string showing datetime, save_type, and tube for each segment.
         """
-        raw = self._get_history_bytes()
-        records = parse_gmc_history(raw)
-        
+        records = Parser(self._get_history_bytes()).parse()
         if not records:
             return "No history data found."
         
