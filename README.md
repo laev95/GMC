@@ -44,7 +44,7 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 python src/main.py
 ```
 
-Alternatively in one command:
+Alternatively, in one command:
 ```bash
 PYTHONPATH=. python src/main.py
 ```
