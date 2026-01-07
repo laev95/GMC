@@ -22,7 +22,7 @@ class Reading(IntEnum):
 
 @dataclass
 class Segment:
-    mode: str  # "single"/"double"/"triple"/"quadruple"/"ascii"
+    reading_mode: str # "single"/"double"/"triple"/"quadruple"/"ascii"
     values: List[Union[int, str]] = field(default_factory=list)
 
 
@@ -32,4 +32,4 @@ class Record:
     save_type_token: str
     save_type: str
     tube: Optional[str] = None
-    segments: List[Segment] = field(default_factory=list)
+    segment: Segment = field(default_factory=lambda: Segment(reading_mode="no readings"))

@@ -27,6 +27,10 @@ class HistoryService:
     def _spir_read(self, addr: int, length: int) -> bytes:
         """
         Reads a specific block from the flash memory.
+
+        RFC1801: <SPIR[A2][A1][A0][L1][L0]>>
+
+        A2-A0 are 3 bytes address, L1-L0 are 2 bytes length.
         """
         if not (0 <= addr <= 0xFFFFFF):
             raise ValueError("addr must be 0..0xFFFFFF")
@@ -77,7 +81,21 @@ class HistoryService:
 
     def get_history(self):
         """
-        Reads the entire history and uses the existing parser.
+        Reads the entire history and formats it for display.
+        Returns a formatted string showing datetime, save_type, and tube for each segment.
         """
         raw = self._get_history_bytes()
-        return parse_gmc_history(raw)
+        records = parse_gmc_history(raw)
+        
+        if not records:
+            return "No history data found."
+        
+        output_lines = []
+        for record in records:
+            tube_info = f" | Tube: {record.tube}" if record.tube else ""
+            line = f"{record.ts.strftime('%Y-%m-%d %H:%M:%S')} | {record.save_type}{tube_info} | Reading bytes: {record.segment.reading_mode}"
+            output_lines.append(line)
+            if record.segment.values:
+                output_lines.append(f"Values: {', '.join(str(value) for value in record.segment.values)}\n")
+        
+        return "\n".join(output_lines)
