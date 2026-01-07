@@ -16,6 +16,7 @@ class GlobalState:
         'cpm': 0, 'cps': 0, 'max_cps': 0, 'cpm_high': 0, 'cpm_low': 0
     })
     is_connected: bool = True
+    device_name: str = ""
     is_active: bool = False
     error_message: str = ''
     history_data: str = ''
@@ -52,7 +53,7 @@ async def device_live_data_loop():
                 result = await loop.run_in_executor(None, device.auto_connect)
 
                 if result:
-                    _ = await loop.run_in_executor(None, device.device_info.get_voltage)
+                    state.device_name = await loop.run_in_executor(None, device.device_info.get_hardware_model)
                     state.is_connected = True
                     if state.is_active:
                         await loop.run_in_executor(None, fetch_radiation_data)
@@ -68,6 +69,7 @@ async def device_live_data_loop():
             state.error_message = f"Connection lost: {e}"
             device.disconnect()
             await asyncio.sleep(2)
+            continue
 
         await asyncio.sleep(0.5)
 
@@ -91,24 +93,26 @@ def error_banner():
 @ui.refreshable
 def app_ui():
     def toggle_active():
-        state.is_active = not state.is_active
-        app_ui.refresh()
+        if state.is_connected:
+            state.is_active = not state.is_active
 
-    if state.error_message:
-        error_banner()
+    error_banner()
+
+    with ui.row().classes('items-center p-4'):
+        ui.label().bind_text_from(state, 'device_name', backward=lambda v: f"Device: {v}").classes('text-h4')
+        ui.icon('circle', color='red').bind_visibility_from(state, 'is_connected', backward=lambda x: not x).classes('text-h5')
+        ui.icon('circle', color='green').bind_visibility_from(state, 'is_connected')
 
     with ui.grid(columns=4).classes('gap-4 mx-auto w-full'):
         with ui.card().classes('col-span-1'):
             with ui.row().classes('items-center w-full justify-between mb-4'):
                 ui.label('GQ GMC Radiation Values').classes('text-h5')
-                ui.icon('circle', color='green').bind_visibility_from(state, 'is_connected')
-                ui.icon('circle', color='red').bind_visibility_from(state, 'is_connected', backward=lambda x: not x)
 
             with ui.row().classes('items-center pb-4'):
-                ui.button(
-                    "Stop" if state.is_active else "Start",
-                    on_click=toggle_active
-                ).props(f'icon={"stop" if state.is_active else "play_arrow"}')
+                ui.button('Stop', icon='stop', on_click=toggle_active) \
+                    .bind_visibility_from(state, 'is_active')
+                ui.button('Start', icon='play_arrow', on_click=toggle_active) \
+                    .bind_visibility_from(state, 'is_active', backward=lambda x: not x)
 
                 ui.button("Update once", on_click=lambda: [fetch_radiation_data(), app_ui.refresh()]).props('outline icon=refresh')
 
@@ -129,8 +133,7 @@ def app_ui():
 
             ui.button("Get history data", on_click=fetch_history).props('icon=history')
 
-            ui.textarea(label='History Data') \
-                .props('readonly outlined') \
+            ui.textarea(label='History Data').props('readonly outlined') \
                 .classes('w-full mt-4') \
                 .style('min-height: 300px') \
                 .bind_value_from(state, 'history_data')
