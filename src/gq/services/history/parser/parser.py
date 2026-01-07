@@ -8,7 +8,7 @@ from .parser_token import DATE_LEN, TOKEN_LEN, SPECIAL_BYTE_TOKEN, SAVE_TYPE_TOK
 def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
     """
     Parses a continuous history stream that may include "special byte" tokens
-    changing the measurement width or ASCII mode.
+    changing the measurement width or ASCII reading_mode.
     """
     def read_ascii_bytes() -> bytes:
         nonlocal ptr
@@ -28,9 +28,9 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
     def need_seg(mode: str) -> Segment:
         nonlocal current_seg
         assert current_record is not None
-        if current_seg is None or current_seg.mode != mode:
+        if current_seg is None or current_seg.reading_mode != mode:
             current_seg = Segment(mode)
-            current_record.segments.append(current_seg)
+            current_record.segment = current_seg
         return current_seg
 
     def read(n: int) -> bytes:
@@ -70,100 +70,106 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
     records: List[Record] = []
 
     while ptr <= len(buf):
-        if state == State.DATE:
-            while ptr < len(buf) and not is_valid_header(buf, ptr):
-                ptr += 1
-            if ptr >= len(buf):
-                break
-            start_new_record_at_header()
-            records.append(current_record)
-            continue
+        match state:
+            case State.DATE:
+                while ptr < len(buf) and not is_valid_header(buf, ptr):
+                    ptr += 1
+                if ptr >= len(buf):
+                    break
+                start_new_record_at_header()
+                records.append(current_record)
+                continue
 
-        if state == State.SPEC:
-            try:
-                lookup = peek(TOKEN_LEN)
-            except EOFError:
-                break
-
-            if lookup in SPECIAL_BYTE_TOKEN:
-                tok = read(TOKEN_LEN)
-                kind = SPECIAL_BYTE_TOKEN[tok]
-
-                if kind == "ascii":
-                    state = State.ASCI
-
-                elif kind == "double":
-                    reading = Reading.DOUBLE
-                    state = State.DATA
-
-                elif kind == "triple":
-                    reading = Reading.TRIPLE
-                    state = State.DATA
-
-                elif kind == "quadruple":
-                    reading = Reading.QUADRUPLE
-                    state = State.DATA
-
-                elif kind == "tube":
-                    tube_tok = read(TUBE_TOKEN_LEN)
-                    current_record.tube = TUBE_SELECTED_TOKEN.get(tube_tok, f"unknown({tube_tok.hex()})")
-                    last_record_tube = current_record.tube
-                    state = State.SPEC
-
-                else:
-                    print(f"Unknown special token: {tok.hex()}")
-                    state = State.FAIL
-            else:
-                state = State.DATA
-
-            if current_record.tube is None:
-                current_record.tube = last_record_tube
-
-            continue
-
-        if state == State.ASCI:
-            ascii_bytes = read_ascii_bytes()
-            seg = need_seg("ascii")
-
-            if ascii_bytes:
+            case State.SPEC:
                 try:
-                    seg.values.append(ascii_bytes.decode(encoding="ascii", errors="strict"))
-                except UnicodeDecodeError:
-                    seg.values.append(ascii_bytes.hex())
+                    lookup = peek(TOKEN_LEN)
+                except EOFError:
+                    # TODO: Handle EOF gracefully, possibly by logging or raising a custom exception
+                    break
+                if lookup in SPECIAL_BYTE_TOKEN:
+                    tok = read(TOKEN_LEN)
+                    kind = SPECIAL_BYTE_TOKEN[tok]
 
-            if ptr >= len(buf):
-                break
-            if is_valid_header(buf, ptr):
-                state = State.DATE
-            else:
-                state = State.SPEC
-            continue
+                    match kind:
+                        case "ascii":
+                            state = State.ASCI
 
-        if state == State.DATA:
-            if is_valid_header(buf, ptr):
-                state = State.DATE
+                        case "double":
+                            reading = Reading.DOUBLE
+                            state = State.DATA
+
+                        case "triple":
+                            reading = Reading.TRIPLE
+                            state = State.DATA
+
+                        case "quadruple":
+                            reading = Reading.QUADRUPLE
+                            state = State.DATA
+
+                        case "tube":
+                            tube_tok = read(TUBE_TOKEN_LEN)
+                            current_record.tube = TUBE_SELECTED_TOKEN.get(tube_tok, f"unknown({tube_tok.hex()})")
+                            last_record_tube = current_record.tube
+                            state = State.SPEC
+
+                        case _:
+                            print(f"Unknown special token: {tok.hex()}")
+                            state = State.FAIL
+                else:
+                    state = State.DATA
+
+                if current_record.tube is None:
+                    current_record.tube = last_record_tube
+
                 continue
 
-            try:
-                lookup = peek(DATE_LEN)
-            except EOFError:
-                break
-            if lookup in SPECIAL_BYTE_TOKEN:
-                state = State.SPEC
+            case State.ASCI:
+                ascii_bytes = read_ascii_bytes()
+                seg = need_seg("ascii")
+
+                if ascii_bytes:
+                    try:
+                        seg.values.append(ascii_bytes.decode(encoding="ascii", errors="strict"))
+                    except UnicodeDecodeError:
+                        seg.values.append(ascii_bytes.hex())
+
+                if ptr >= len(buf):
+                    break
+                if is_valid_header(buf, ptr):
+                    state = State.DATE
+                else:
+                    state = State.SPEC
                 continue
 
-            mode_name = reading.name.lower()
-            seg = need_seg(mode_name)
-            try:
-                if peek(TOKEN_LEN) == b"\xff\xff\xff":
-                    raise EOFError("Reached end of recording.")
-                raw = read(int(reading))
-            except EOFError as e:
-                print(f"EOF while reading {mode_name} data: {e}")
-                break
-            seg.values.append(_bytes_to_uint(raw))
-            continue
+            case State.DATA:
+                if is_valid_header(buf, ptr):
+                    state = State.DATE
+                    continue
 
-        break
+                try:
+                    lookup = peek(DATE_LEN)
+                except EOFError:
+                    #TODO
+                    break
+                if lookup in SPECIAL_BYTE_TOKEN:
+                    state = State.SPEC
+                    continue
+
+                mode_name = reading.name.lower()
+                seg = need_seg(mode_name)
+                try:
+                    if peek(TOKEN_LEN) == b"\xff\xff\xff":
+                        raise EOFError("Reached end of recording.")
+                    raw = read(int(reading))
+                except EOFError as e:
+                    print(f"EOF while reading {mode_name} data: {e}")
+                    break
+                if int.from_bytes(raw) > 100:
+                    print(raw)
+                seg.values.append(_bytes_to_uint(raw))
+                continue
+
+            case _:
+                break
 
     return records
