@@ -1,6 +1,5 @@
 import asyncio
-from dataclasses import dataclass, field
-from typing import Dict
+from .gmc_state import GlobalState
 
 from nicegui import ui, app
 from serial.serialutil import SerialException
@@ -9,18 +8,6 @@ from src.gq.device import GMCDevice
 
 device = GMCDevice()
 device_lock = asyncio.Lock()
-
-@dataclass
-class GlobalState:
-    radiation: Dict[str, int] = field(default_factory=lambda: {
-        'cpm': 0, 'cps': 0, 'max_cps': 0, 'cpm_high': 0, 'cpm_low': 0
-    })
-    is_connected: bool = True
-    device_name: str = ""
-    is_active: bool = False
-    error_message: str = ''
-    history_data: str = ''
-
 state = GlobalState()
 
 
@@ -50,8 +37,8 @@ async def device_live_data_loop():
         try:
             async with device_lock:
                 loop = asyncio.get_running_loop()
+                # TODO rework with proper connection state handling
                 result = await loop.run_in_executor(None, device.auto_connect)
-
                 if result:
                     state.device_name = await loop.run_in_executor(None, device.device_info.get_hardware_model)
                     state.is_connected = True
@@ -74,6 +61,11 @@ async def device_live_data_loop():
         await asyncio.sleep(0.5)
 
 
+def toggle_active():
+    if state.is_connected:
+        state.is_active = not state.is_active
+
+
 @ui.refreshable
 def error_banner():
     with ui.row().classes(
@@ -92,10 +84,6 @@ def error_banner():
 
 @ui.refreshable
 def app_ui():
-    def toggle_active():
-        if state.is_connected:
-            state.is_active = not state.is_active
-
     error_banner()
 
     with ui.row().classes('items-center p-4'):
