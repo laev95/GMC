@@ -147,11 +147,11 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
                     continue
 
                 try:
-                    lookup = peek(DATE_LEN)
+                    lookup = peek(TOKEN_LEN)
                 except EOFError:
                     #TODO
                     break
-                if lookup in SPECIAL_BYTE_TOKEN:
+                if any([key in lookup for key in SPECIAL_BYTE_TOKEN.keys()]):
                     state = State.SPEC
                     continue
 
@@ -161,11 +161,12 @@ def parse_gmc_history(raw_bytes: bytes) -> List[Record]:
                     if peek(TOKEN_LEN) == b"\xff\xff\xff":
                         raise EOFError("Reached end of recording.")
                     raw = read(int(reading))
+                    if raw.hex() == "55":
+                        print(lookup)
                 except EOFError as e:
                     print(f"EOF while reading {mode_name} data: {e}")
                     break
-                if int.from_bytes(raw) > 100:
-                    print(raw)
+
                 seg.values.append(_bytes_to_uint(raw))
                 continue
 
