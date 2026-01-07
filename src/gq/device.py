@@ -11,7 +11,6 @@ from .services.rtc import RTCService
 from .services.sensors import SensorsService
 from .services.wifi import WiFiService
 
-
 class GMCDevice:
     def __init__(self):
         self._manager = SerialManager()

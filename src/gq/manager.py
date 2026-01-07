@@ -12,7 +12,7 @@ class ConnConfig:
     baud_rate: int = 115200
     stop_bits: int = 1
 
-
+# TODO: check if connection is not None (state and error handling)
 class SerialManager:
     """
     Manages serial communication with external devices.
