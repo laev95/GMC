@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import List, Optional, Union
-from enum import Enum, IntEnum
+
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum, IntEnum
+from typing import List, Optional, Union
 
 
 class State(Enum):

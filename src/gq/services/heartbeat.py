@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Iterator, TYPE_CHECKING
 
 if TYPE_CHECKING:

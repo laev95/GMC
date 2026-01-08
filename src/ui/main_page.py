@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 import asyncio
-from .gmc_state import GlobalState
 
 from nicegui import ui, app
 from serial.serialutil import SerialException
 
 from src.gq.device import GMCDevice
+from .gmc_state import GlobalState
 
 device = GMCDevice()
 device_lock = asyncio.Lock()

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from .manager import SerialManager, ConnConfig
 from .services.audio import AudioService
 from .services.config import ConfigService
@@ -11,6 +12,7 @@ from .services.radiation import RadiationService
 from .services.rtc import RTCService
 from .services.sensors import SensorsService
 from .services.wifi import WiFiService
+
 
 class GMCDevice:
     def __init__(self):
@@ -28,7 +30,6 @@ class GMCDevice:
         self.rtc = RTCService(self._manager)
         self.sensors = SensorsService(self._manager)
         self.wifi = WiFiService(self._manager)
-
 
     def connect(self, port: str) -> bool:
         return self._manager.connect(ConnConfig(port=port))

@@ -1,8 +1,12 @@
 from __future__ import annotations
+
 from typing import List, Optional
+
 from .parser_helper import ParserHelper
 from .parser_model import Record, State, Segment, Reading
-from .parser_token import DATE_LEN, TOKEN_LEN, SPECIAL_BYTE_TOKEN, SAVE_TYPE_TOKEN, TUBE_SELECTED_TOKEN, TUBE_TOKEN_LEN, TIMESTAMP_MARKER
+from .parser_token import DATE_LEN, TOKEN_LEN, SPECIAL_BYTE_TOKEN, SAVE_TYPE_TOKEN, TUBE_SELECTED_TOKEN, TUBE_TOKEN_LEN, \
+    TIMESTAMP_MARKER
+
 
 class Parser:
     def __init__(self, raw_bytes: bytes):
