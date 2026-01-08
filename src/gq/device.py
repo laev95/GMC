@@ -1,3 +1,4 @@
+from __future__ import annotations
 from .manager import SerialManager, ConnConfig
 from .services.audio import AudioService
 from .services.config import ConfigService

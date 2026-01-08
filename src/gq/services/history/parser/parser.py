@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import List, Optional
 from .parser_helper import ParserHelper
 from .parser_model import Record, State, Segment, Reading
