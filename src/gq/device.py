@@ -14,6 +14,8 @@ from .services.wifi import WiFiService
 class GMCDevice:
     def __init__(self):
         self._manager = SerialManager()
+        self.connection_status = self.auto_connect()
+
         self.audio = AudioService(self._manager)
         self.config = ConfigService(self._manager)
         self.device_info = DeviceInfoService(self._manager)
@@ -25,6 +27,7 @@ class GMCDevice:
         self.rtc = RTCService(self._manager)
         self.sensors = SensorsService(self._manager)
         self.wifi = WiFiService(self._manager)
+
 
     def connect(self, port: str) -> bool:
         return self._manager.connect(ConnConfig(port=port))
