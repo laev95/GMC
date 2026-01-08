@@ -30,7 +30,7 @@ class ConfigService:
         RFC1801: <GETCFG>> returns the configuration bytes (512 bytes).
         """
         self._manager.write(b"<GETCFG>>")
-        return self._manager.read_exact(512)
+        return self._manager.read(512)
 
     def erase_config(self) -> bool:
         """

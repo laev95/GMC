@@ -27,7 +27,7 @@ class HeartbeatService:
         self._heartbeat_stopped = False
         self._manager.write(b"<HEARTBEAT1>>")
         while not self._heartbeat_stopped:
-            yield self._manager.read_exact(4)
+            yield self._manager.read(4)
 
     def turn_off_heartbeat(self) -> None:
         """

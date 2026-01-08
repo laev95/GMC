@@ -40,7 +40,7 @@ class PowerService:
     def factory_reset(self) -> bool:
         """
         RFC1801: <FACTORYRESET>> resets to factory settings.
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         self._manager.write(b"<FACTORYRESET>>")
         return self._manager.read_ack()

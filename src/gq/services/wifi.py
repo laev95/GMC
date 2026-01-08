@@ -22,7 +22,7 @@ class WiFiService:
     def set_wifi_ssid(self, ssid: str) -> bool:
         """
         RFC1801: <SETSSID...>> sets SSID (ASCII string).
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         self._manager.write(b"<SETSSID" + ssid.encode("ascii", errors="strict") + b">>")
         return self._manager.read_ack()
@@ -30,7 +30,7 @@ class WiFiService:
     def set_wifi_password(self, password: str) -> bool:
         """
         RFC1801: <SETWIFIPW...>> sets WiFi password (ASCII string).
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         self._manager.write(b"<SETWIFIPW" + password.encode("ascii", errors="strict") + b">>")
         return self._manager.read_ack()
@@ -38,7 +38,7 @@ class WiFiService:
     def set_website(self, website: str) -> bool:
         """
         RFC1801: <SETWEBSITE...>> sets website parameter (ASCII string).
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         self._manager.write(b"<SETWEBSITE" + website.encode("ascii", errors="strict") + b">>")
         return self._manager.read_ack()
@@ -46,7 +46,7 @@ class WiFiService:
     def set_url(self, url: str) -> bool:
         """
         RFC1801: <SETURL...>> sets URL (ASCII string).
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         self._manager.write(b"<SETURL" + url.encode("ascii", errors="strict") + b">>")
         return self._manager.read_ack()
@@ -54,7 +54,7 @@ class WiFiService:
     def set_user_id(self, user_id: str) -> bool:
         """
         RFC1801: <SETUSERID...>> sets UserID (ASCII string).
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         self._manager.write(b"<SETUSERID" + user_id.encode("ascii", errors="strict") + b">>")
         return self._manager.read_ack()
@@ -62,7 +62,7 @@ class WiFiService:
     def set_counter_id(self, counter_id: str) -> bool:
         """
         RFC1801: <SETCOUNTERID...>> sets CounterID (ASCII string).
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         self._manager.write(b"<SETCOUNTERID" + counter_id.encode("ascii", errors="strict") + b">>")
         return self._manager.read_ack()
@@ -70,7 +70,7 @@ class WiFiService:
     def set_period_hex(self, period: int) -> bool:
         """
         RFC1801: <SETPERIOD[Param in hex]>> sets the transmission interval/period parameter.
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
 
         Implementation note:
         The RFC describes "Param in hex". In practice, it is usually a 1-byte raw value (0..255),
@@ -84,7 +84,7 @@ class WiFiService:
     def wifi_on(self) -> bool:
         """
         RFC1801: <WiFiON>> activates WiFi.
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         self._manager.write(b"<WiFiON>>")
         return self._manager.read_ack()
@@ -92,7 +92,7 @@ class WiFiService:
     def wifi_off(self) -> bool:
         """
         RFC1801: <WiFiOFF>> deactivates WiFi.
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         self._manager.write(b"<WiFiOFF>>")
         return self._manager.read_ack()
@@ -109,7 +109,7 @@ class WiFiService:
             self._manager.write(b"<AT" + command.encode("ascii", errors="strict") + b">>")
         else:
             self._manager.write(b"<AT>>")
-        return self._manager.read_exact(256)
+        return self._manager.read(256)
 
     def wifi_level(self) -> bytes:
         """
@@ -117,4 +117,4 @@ class WiFiService:
         Length not fixed in RFC → raw read.
         """
         self._manager.write(b"<WiFiLevel>>")
-        return self._manager.read_exact(256)
+        return self._manager.read(256)

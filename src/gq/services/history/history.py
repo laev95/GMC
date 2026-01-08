@@ -46,7 +46,7 @@ class HistoryService:
                    length)
 
         self._manager.write(b"<SPIR" + cmd + b">>")
-        return self._manager.read_exact(length)
+        return self._manager.read(length)
 
     def _iter_history_bytes(self, block_size: int = 4096, min_ff_tail: int = 512) -> Iterator[bytes]:
         """

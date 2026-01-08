@@ -39,18 +39,18 @@ class RTCService:
           YY MM DD HH MM SS 0xAA
         """
         self._manager.write(b"<GETDATETIME>>")
-        data = self._manager.read_exact(7)
+        data = self._manager.read(7)
         if len(data) != 7:
             raise OSError(f"Expected 7 bytes, got {len(data)}")
         yy, mm, dd, hh, mi, ss, ack = data
-        if ack != self._manager.ACK:
+        if ack != self._manager._ACK:
             raise OSError(f"Expected ack 0xAA as last byte, got 0x{ack:02X}")
         return DeviceDateTime(yy, mm, dd, hh, mi, ss)
 
     def set_date_year(self, year_since_2000: int) -> bool:
         """
         RFC1801: <SETDATEYY[D0]>> sets the year (since 2000 as 1 byte).
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         if not (0 <= year_since_2000 <= 0xFF):
             raise ValueError("year_since_2000 must be 0..255 (0=2000)")
@@ -60,7 +60,7 @@ class RTCService:
     def set_date_month(self, month: int) -> bool:
         """
         RFC1801: <SETDATEMM[D0]>> sets the month (1..12).
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         if not (1 <= month <= 12):
             raise ValueError("month must be 1..12")
@@ -70,7 +70,7 @@ class RTCService:
     def set_date_day(self, day: int) -> bool:
         """
         RFC1801: <SETDATEDD[D0]>> sets the day (1..31).
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         if not (1 <= day <= 31):
             raise ValueError("day must be 1..31")
@@ -80,7 +80,7 @@ class RTCService:
     def set_time_hour(self, hour: int) -> bool:
         """
         RFC1801: <SETTIMEHH[D0]>> sets the hour (0..23).
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         if not (0 <= hour <= 23):
             raise ValueError("hour must be 0..23")
@@ -90,7 +90,7 @@ class RTCService:
     def set_time_minute(self, minute: int) -> bool:
         """
         RFC1801: <SETTIMEMM[D0]>> sets the minute (0..59).
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         if not (0 <= minute <= 59):
             raise ValueError("minute must be 0..59")
@@ -100,7 +100,7 @@ class RTCService:
     def set_time_second(self, second: int) -> bool:
         """
         RFC1801: <SETTIMESS[D0]>> sets the second (0..59).
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
         """
         if not (0 <= second <= 59):
             raise ValueError("second must be 0..59")
@@ -118,7 +118,7 @@ class RTCService:
     ) -> bool:
         """
         RFC1801: <SETDATETIME[YYMMDDHHMMSS]>> sets date+time in one command.
-        Returns: 0xAA (ACK)
+        Returns: 0xAA (_ACK)
 
         All fields are transmitted as individual bytes:
           YY = years since 2000

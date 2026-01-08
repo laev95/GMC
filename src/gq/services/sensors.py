@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class GyroData:
     """
-    RFC1801: Gyro returns raw X/Y/Z values (2 bytes each, unsigned) + ACK.
+    RFC1801: Gyro returns raw X/Y/Z values (2 bytes each, unsigned) + _ACK.
     """
     x: int
     y: int
@@ -35,13 +35,13 @@ class SensorsService:
           X_MSB X_LSB Y_MSB Y_LSB Z_MSB Z_LSB 0xAA
         """
         self._manager.write(b"<GETGYRO>>")
-        data = self._manager.read_exact(7)
+        data = self._manager.read(7)
         if len(data) != 7:
             raise IOError(f"Expected 7 bytes, got {len(data)}")
         x = int.from_bytes(data[0:2], "big", signed=False)
         y = int.from_bytes(data[2:4], "big", signed=False)
         z = int.from_bytes(data[4:6], "big", signed=False)
-        if data[6] != self._manager.ACK:
+        if data[6] != self._manager._ACK:
             raise IOError(f"Expected ack 0xAA as last byte, got 0x{data[6]:02X}")
         return GyroData(x=x, y=y, z=z)
 
@@ -51,4 +51,4 @@ class SensorsService:
         Therefore left as a raw read (length not normalized).
         """
         self._manager.write(b"<GETTEMP>>")
-        return self._manager.read_exact(32)
+        return self._manager.read(32)

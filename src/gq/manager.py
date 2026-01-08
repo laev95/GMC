@@ -12,7 +12,6 @@ class ConnConfig:
     baud_rate: int = 115200
     stop_bits: int = 1
 
-# TODO: check if connection is not None (state and error handling)
 class SerialManager:
     """
     Manages serial communication with external devices.
@@ -22,13 +21,13 @@ class SerialManager:
     the connection. It can handle default configurations and includes support
     for reading specific data formats.
 
-    :ivar ACK: Acknowledgment byte used for communication validation.
-    :type ACK: int
+    :ivar _ACK: Acknowledgment byte used for communication validation.
+    :type _ACK: int
     """
 
     def __init__(self):
         self._conn: Serial | None = None
-        self.ACK = 0xAA
+        self._ACK = 0xAA
 
     @staticmethod
     def _discover_ports() -> dict[str, str]:
@@ -80,17 +79,20 @@ class SerialManager:
             finally:
                 self._conn = None
 
-    def write(self, data: bytes):
-        self._conn.write(data)
+    def write(self, data: bytes) -> None:
+        if self._conn:
+            self._conn.write(data)
 
-    def read_exact(self, n: int) -> bytes:
+    def read(self, n: int) -> bytes:
+        if self._conn is None: return b""
+
         data = self._conn.read(n)
         if len(data) < n:
-            raise OSError(f"Timeout: Expected {n} bytes, received {len(data)}")
+            raise OSError(f"Read timeout: Expected {n} bytes, received {len(data)}")
         return data
 
     def read_u32_be(self) -> int:
-        return int.from_bytes(self.read_exact(4), "big")
+        return int.from_bytes(self.read(4), "big")
 
     def read_ack(self) -> bool:
-        return self.read_exact(1)[0] == self.ACK
+        return self.read(1)[0] == self._ACK
