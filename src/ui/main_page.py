@@ -12,13 +12,11 @@ state = GlobalState()
 
 
 async def fetch_history():
-    async with device_lock:
+    if state.is_connected:
         loop = asyncio.get_running_loop()
-        try:
+        async with device_lock:
             history = await loop.run_in_executor(None, device.history.get_history)
             state.history_data = str(history)
-        except Exception as e:
-            state.history_data = f"Error fetching history: {e}"
 
 
 def fetch_radiation_data():
@@ -33,32 +31,25 @@ def fetch_radiation_data():
 
 
 async def device_live_data_loop():
-    while True:
-        try:
+    loop = asyncio.get_running_loop()
+    try:
+        while True:
+            state.is_connected = device.connection_status
             async with device_lock:
-                loop = asyncio.get_running_loop()
-                # TODO rework with proper connection state handling
-                result = await loop.run_in_executor(None, device.auto_connect)
-                if result:
+                if state.is_connected:
                     state.device_name = await loop.run_in_executor(None, device.device_info.get_hardware_model)
-                    state.is_connected = True
                     if state.is_active:
                         await loop.run_in_executor(None, fetch_radiation_data)
                 else:
-                    state.is_connected = False
+                    await loop.run_in_executor(None, device.auto_connect)
+            await asyncio.sleep(1)
 
-                if state.is_active:
-                    await loop.run_in_executor(None, fetch_radiation_data)
-
-        except (SerialException, OSError) as e:
-            state.is_connected = False
-            state.is_active = False
-            state.error_message = f"Connection lost: {e}"
-            device.disconnect()
-            await asyncio.sleep(2)
-            continue
-
-        await asyncio.sleep(0.5)
+    except (SerialException, OSError) as e:
+        state.is_connected = False
+        state.is_active = False
+        state.error_message = f"Connection lost: {e}"
+        device.disconnect()
+        await asyncio.sleep(2)
 
 
 def toggle_active():
@@ -102,7 +93,7 @@ def app_ui():
                 ui.button('Start', icon='play_arrow', on_click=toggle_active) \
                     .bind_visibility_from(state, 'is_active', backward=lambda x: not x)
 
-                ui.button("Update once", on_click=lambda: [fetch_radiation_data(), app_ui.refresh()]).props('outline icon=refresh')
+                ui.button("Update once", on_click=fetch_radiation_data).props('outline icon=refresh')
 
             with ui.grid(columns=2).classes('w-full gap-4'):
                 with ui.column():

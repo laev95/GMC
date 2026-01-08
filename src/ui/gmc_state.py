@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Dict
+
 @dataclass
 class GlobalState:
     radiation: Dict[str, int] = field(default_factory=lambda: {
