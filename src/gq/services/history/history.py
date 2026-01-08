@@ -1,4 +1,3 @@
-# src/gq/history_reader/history.py
 from __future__ import annotations
 
 from struct import pack
