@@ -90,10 +90,10 @@ class HistoryService:
         
         output_lines = []
         for record in records:
-            tube_info = f" | Tube: {record.tube}" if record.tube else ""
-            line = f"{record.ts.strftime('%Y-%m-%d %H:%M:%S')} | {record.save_type}{tube_info} | Reading bytes: {record.segment.reading_mode}"
-            output_lines.append(line)
             if record.segment.values:
+                tube_info = f" | Tube: {record.tube}" if record.tube else ""
+                line = f"{record.ts.strftime('%Y-%m-%d %H:%M:%S')} | {record.save_type}{tube_info} | Reading bytes: {record.segment.reading_mode}"
+                output_lines.append(line)
                 output_lines.append(f"Values: {', '.join(str(value) for value in record.segment.values)}\n")
         
         return "\n".join(output_lines)
