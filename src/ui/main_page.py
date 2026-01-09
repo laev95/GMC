@@ -17,11 +17,15 @@ async def fetch_history():
     if state.is_connected:
         loop = asyncio.get_running_loop()
         async with device_lock:
-            history = await loop.run_in_executor(None, device.history.get_history)
+            try:
+                history = await loop.run_in_executor(None, device.history.get_history)
+            except (SerialException, OSError) as e:
+                state.history_data = f"Error fetching history: {e}"
             state.history_data = str(history)
 
 
 def fetch_radiation_data():
+    #TODO make async for single use.
     if state.is_connected:
         state.radiation.update({
             'cpm': device.radiation.get_cpm(),
@@ -33,6 +37,8 @@ def fetch_radiation_data():
 
 
 async def device_live_data_loop():
+    # TODO rework event loop
+
     loop = asyncio.get_running_loop()
     try:
         while True:
