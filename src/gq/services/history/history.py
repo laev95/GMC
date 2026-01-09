@@ -83,16 +83,32 @@ class HistoryService:
         Reads the entire history and formats it for display.
         Returns a formatted string showing datetime, save_type, and tube for each segment.
         """
-        records = Parser(self._get_history_bytes()).parse()
+        result = Parser(self._get_history_bytes()).parse_result()
+        records = result.records
+        issues = result.issues
+
         if not records:
             return "No history data found."
-        
+
         output_lines = []
         for record in records:
             if record.segment.values:
                 tube_info = f" | Tube: {record.tube}" if record.tube else ""
-                line = f"{record.ts.strftime('%Y-%m-%d %H:%M:%S')} | {record.save_type}{tube_info} | Reading bytes: {record.segment.reading_mode}"
+                line = (
+                    f"{record.ts.strftime('%Y-%m-%d %H:%M:%S')} | {record.save_type}"
+                    f"{tube_info} | Reading bytes: {record.segment.reading_mode}"
+                )
                 output_lines.append(line)
                 output_lines.append(f"Values: {', '.join(str(value) for value in record.segment.values)}\n")
-        
+
+        if issues:
+            output_lines.append("\nWarnings:")
+            for i, issue in enumerate(issues, start=1):
+                msg = f"{i}. {issue.message} (offset={issue.offset}, state={issue.state})"
+                output_lines.append(msg)
+                if issue.raw_hex:
+                    output_lines.append(f"   tail_hex: {issue.raw_hex}")
+                if issue.context:
+                    output_lines.append(f"   context: {issue.context}")
+
         return "\n".join(output_lines)

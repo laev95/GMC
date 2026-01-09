@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from .parser_helper import ParserHelper
-from .parser_model import Record, State, Segment, Reading
+from .parser_model import Record, State, Segment, Reading, ParserResult, ParseIssue, Severity
 from .parser_token import DATE_LEN, TOKEN_LEN, SPECIAL_BYTE_TOKEN, SAVE_TYPE_TOKEN, TUBE_SELECTED_TOKEN, TUBE_TOKEN_LEN, \
     TIMESTAMP_MARKER
 
@@ -19,22 +19,48 @@ class Parser:
         self._current_seg: Optional[Segment] = None
         self._records: List[Record] = []
 
-    def _peek(self, n: int) -> bytes:
+        self._issues: List[ParseIssue] = []
+        self._tail_annotated = False
+
+    def _try_peek(self, n: int) -> bytes | None:
         if self._ptr + n > len(self._buf):
-            raise EOFError("Unexpected end of stream.")
+            return None
         return self._buf[self._ptr: self._ptr + n]
 
-    def _read(self, n: int) -> bytes:
+    def _try_read(self, n: int) -> bytes | None:
         if self._ptr + n > len(self._buf):
-            raise EOFError("Unexpected end of stream.")
+            return None
         out = self._buf[self._ptr: self._ptr + n]
         self._ptr += n
         return out
 
+    def _annotate_eof_tail(self, *, message: str, expected: int | None = None) -> None:
+        if self._tail_annotated:
+            return
+
+        tail = self._buf[self._ptr:]
+        cap = 64
+        raw_hex = tail[:cap].hex()
+
+        ctx: dict[str, object] = {"remaining": len(tail)}
+        if expected is not None:
+            ctx["expected"] = expected
+        if len(tail) > cap:
+            ctx["truncated_to"] = cap
+
+        self._issues.append(ParseIssue(
+            severity=Severity.WARNING,
+            message=message,
+            offset=self._ptr,
+            state=self._state.value,
+            raw_hex=raw_hex,
+            context=ctx,
+        ))
+        self._tail_annotated = True
+
     def _read_ascii_bytes(self) -> bytes:
         start = self._ptr
         while self._ptr + TOKEN_LEN <= len(self._buf):
-            # TODO error handling
             if self._buf[self._ptr:self._ptr + TOKEN_LEN] in SPECIAL_BYTE_TOKEN or self._is_valid_header():
                 break
             if self._buf[self._ptr] == b"\xff":
@@ -71,45 +97,54 @@ class Parser:
         return ParserHelper.is_plausible_date6(date6) and save3[:2] == b"\x55\xaa"
 
     def _start_new_record_at_header(self) -> None:
-        if self._read(TOKEN_LEN) == TIMESTAMP_MARKER:
-            date6 = self._read(DATE_LEN)
-            save3 = self._read(TOKEN_LEN)
+        if self._try_read(TOKEN_LEN) == TIMESTAMP_MARKER:
+            date6 = self._try_read(DATE_LEN)
+            save3 = self._try_read(TOKEN_LEN)
 
             ts = ParserHelper.parse_date6(date6)
             save_type = SAVE_TYPE_TOKEN.get(save3, f"unknown({save3.hex()})")
 
             self._current_record = Record(ts, save_type_token=save3.hex(), save_type=save_type)
-            self._current_seg = None
-            self._reading = Reading.SINGLE
-            self._state = State.SPEC
         else:
-            #TODO error handling
-            pass
+            # Should be unreachable because callers check _is_valid_header() first.
+            self._issues.append(ParseIssue(
+                severity=Severity.WARNING,
+                message="Header mismatch while starting new record; attempting to continue.",
+                offset=max(0, self._ptr - TOKEN_LEN),
+                state=self._state.value,
+            ))
 
-    def parse(self) -> List[Record]:
+    def parse_result(self) -> ParserResult:
         """
-        Parses a continuous history stream that may include "special byte" tokens
-        changing the measurement width or ASCII reading_mode.
+        Tolerant parse:
+        - Keeps partial last record
+        - Drops partial values
+        - Annotates ONLY final tail/EOF as a WARNING with a hex dump
         """
-        while self._ptr <= len(self._buf):
+        while self._ptr < len(self._buf):
             match self._state:
                 case State.DATE:
                     while self._ptr < len(self._buf) and not self._is_valid_header():
                         self._ptr += 1
                     if self._ptr >= len(self._buf):
                         break
+
                     self._start_new_record_at_header()
-                    self._records.append(self._current_record)
+                    if self._current_record is not None:
+                        self._current_seg = None
+                        self._reading = Reading.SINGLE
+                        self._state = State.SPEC
+                        self._records.append(self._current_record)
                     continue
 
                 case State.SPEC:
-                    try:
-                        lookup = self._peek(TOKEN_LEN)
-                    except EOFError:
-                        # TODO: Handle EOF gracefully, possibly by logging or raising a custom exception
+                    lookup = self._try_peek(TOKEN_LEN)
+                    if lookup is None:
+                        self._annotate_eof_tail(message="EOF while looking for special token/header.")
                         break
+
                     if lookup in SPECIAL_BYTE_TOKEN:
-                        tok = self._read(TOKEN_LEN)
+                        tok = self._try_read(TOKEN_LEN)
                         kind = SPECIAL_BYTE_TOKEN[tok]
 
                         match kind:
@@ -129,18 +164,38 @@ class Parser:
                                 self._state = State.DATA
 
                             case "tube":
-                                tube_tok = self._read(TUBE_TOKEN_LEN)
-                                self._current_record.tube = TUBE_SELECTED_TOKEN.get(tube_tok, f"unknown({tube_tok.hex()})")
-                                self._last_record_tube = self._current_record.tube
-                                self._state = State.SPEC
+                                tube_tok = self._try_read(TUBE_TOKEN_LEN)
+                                if tube_tok is None:
+                                    self._annotate_eof_tail(message="EOF while reading tube token.", expected=TUBE_TOKEN_LEN)
+                                    break
+                                if self._current_record is None:
+                                    self._issues.append(ParseIssue(
+                                        severity=Severity.WARNING,
+                                        message="Got tube token but no current record; skipping.",
+                                        offset=self._ptr,
+                                        state=self._state.value,
+                                    ))
+                                    self._state = State.DATE
+                                else:
+                                    # Should be unreachable since the loop starts with date parsing.
+                                    self._current_record.tube = TUBE_SELECTED_TOKEN.get(tube_tok, f"unknown({tube_tok.hex()})")
+                                    self._last_record_tube = self._current_record.tube
+                                    self._state = State.SPEC
 
                             case _:
-                                print(f"Unknown special token: {tok.hex()}")
-                                self._state = State.FAIL
+                                # Should be unreachable since match-case is already exhaustive.
+                                self._issues.append(ParseIssue(
+                                    severity=Severity.WARNING,
+                                    message=f"Unknown special token kind: {kind}",
+                                    offset=max(0, self._ptr - TOKEN_LEN),
+                                    state=self._state.value,
+                                    context={"token_hex": tok.hex()},
+                                ))
+                                self._state = State.DATA
                     else:
                         self._state = State.DATA
 
-                    if self._current_record.tube is None:
+                    if self._current_record is not None and self._current_record.tube is None:
                         self._current_record.tube = self._last_record_tube
 
                     continue
@@ -150,26 +205,32 @@ class Parser:
                         self._state = State.DATE
                         continue
 
-                    try:
-                        lookup = self._peek(TOKEN_LEN)
-                    except EOFError:
-                        # TODO
+                    lookup = self._try_peek(TOKEN_LEN)
+                    if lookup is None:
+                        self._annotate_eof_tail(message="EOF while reading data token.")
                         break
-                    if any([key in lookup for key in SPECIAL_BYTE_TOKEN.keys()]):
+
+                    if any(key in lookup for key in SPECIAL_BYTE_TOKEN.keys()):
                         self._state = State.SPEC
                         continue
 
                     mode_name = self._reading.name.lower()
                     self._need_seg(mode_name)
 
-                    try:
-                        if self._peek(TOKEN_LEN) == b"\xff\xff\xff":
-                            raise EOFError("Reached end of recording.")
-                        raw = self._read(int(self._reading))
-                        if raw.hex() == "55":
-                            print(lookup)
-                    except EOFError as e:
-                        print(f"EOF while reading {mode_name} data: {e}")
+                    end_marker = self._try_peek(TOKEN_LEN)
+                    if end_marker is None:
+                        self._annotate_eof_tail(message="EOF while checking end marker.")
+                        break
+                    if end_marker == b"\xff\xff\xff":
+                        break
+
+                    reading_bytes = int(self._reading)
+                    raw = self._try_read(reading_bytes)
+                    if raw is None:
+                        self._annotate_eof_tail(
+                            message=f"EOF mid-value while reading {mode_name}; dropped partial value.",
+                            expected=reading_bytes,
+                        )
                         break
 
                     self._current_seg.values.append(ParserHelper.bytes_to_uint(raw))
@@ -193,4 +254,4 @@ class Parser:
                         self._state = State.SPEC
                     continue
 
-        return self._records
+        return ParserResult(records=self._records, issues=self._issues)

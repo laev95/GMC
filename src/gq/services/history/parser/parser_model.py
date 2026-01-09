@@ -34,3 +34,23 @@ class Record:
     save_type: str
     tube: Optional[str] = None
     segment: Segment = field(default_factory=lambda: Segment(reading_mode="no readings"))
+
+
+class Severity(Enum):
+    WARNING = "warning"
+
+
+@dataclass(frozen=True)
+class ParseIssue:
+    severity: Severity
+    message: str
+    offset: int
+    state: str
+    raw_hex: Optional[str] = None
+    context: Optional[dict[str, object]] = None
+
+
+@dataclass(frozen=True)
+class ParserResult:
+    records: List[Record]
+    issues: List[ParseIssue]
