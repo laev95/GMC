@@ -17,7 +17,7 @@ from src.gq.services.impl.wifi import WiFiService
 class GMCDevice:
     def __init__(self):
         self._manager = SerialManager()
-        self.connection_status = self.auto_connect()
+        self.connection_status = self._manager.connect()
 
         self.audio = AudioService(self._manager)
         self.config = ConfigService(self._manager)
@@ -31,11 +31,11 @@ class GMCDevice:
         self.sensors = SensorsService(self._manager)
         self.wifi = WiFiService(self._manager)
 
-    def connect(self, port: str) -> bool:
-        return self._manager.connect(ConnConfig(port=port))
+    def connect(self, port: str) -> None:
+        self.connection_status = self._manager.connect(ConnConfig(port=port))
 
-    def auto_connect(self) -> bool:
-        return self._manager.connect()
+    def auto_connect(self) -> None:
+        self.connection_status = self._manager.connect()
 
     def disconnect(self) -> None:
         self._manager.disconnect()

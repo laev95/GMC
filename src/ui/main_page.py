@@ -3,66 +3,66 @@ from __future__ import annotations
 import asyncio
 
 from nicegui import ui, app
-from serial.serialutil import SerialException
 
 from src.gq.device import GMCDevice
 from .gmc_state import GlobalState
+from ..gq.errors import ServiceError
 
 device = GMCDevice()
 device_lock = asyncio.Lock()
 state = GlobalState()
 
 
-async def fetch_history():
-    if state.is_connected:
-        loop = asyncio.get_running_loop()
-        async with device_lock:
-            try:
-                history = await loop.run_in_executor(None, device.history.get_history)
-            except (SerialException, OSError) as e:
-                state.history_data = f"Error fetching history: {e}"
+def shutdown():
+    state.is_connected = False
+    state.is_active = False
+    device.disconnect()
+
+
+async def fetch_history() -> None:
+    async with device_lock:
+        try:
+            history = await asyncio.to_thread(device.history.get_history)
             state.history_data = str(history)
+        except ServiceError as e:
+            state.error_message = f"Error fetching history: {e} ({e.__class__.__name__})"
+            shutdown()
 
 
-def fetch_radiation_data():
-    #TODO make async for single use.
-    if state.is_connected:
-        state.radiation.update({
-            'cpm': device.radiation.get_cpm(),
-            'cps': device.radiation.get_cps(),
-            'max_cps': device.radiation.get_max_cps(),
-            'cpm_high': device.radiation.get_cpm_high_tube(),
-            'cpm_low': device.radiation.get_cpm_low_tube()
-        })
+async def fetch_radiation_data() -> None:
+    async with device_lock:
+        try:
+            await asyncio.to_thread(lambda: state.radiation.update({
+                'cpm': device.radiation.get_cpm(),
+                'cps': device.radiation.get_cps(),
+                'max_cps': device.radiation.get_max_cps(),
+                'cpm_high': device.radiation.get_cpm_high_tube(),
+                'cpm_low': device.radiation.get_cpm_low_tube()
+            }))
+        except ServiceError as e:
+            state.error_message = f"Error fetching radiation: {e} ({e.__class__.__name__})"
+            shutdown()
 
 
 async def device_live_data_loop():
-    # TODO rework event loop
-
-    loop = asyncio.get_running_loop()
-    try:
-        while True:
-            state.is_connected = device.connection_status
+    while True:
+        state.is_connected = device.connection_status
+        if state.is_connected:
             async with device_lock:
-                if state.is_connected:
-                    state.device_name = await loop.run_in_executor(None, device.device_info.get_hardware_model)
-                    if state.is_active:
-                        await loop.run_in_executor(None, fetch_radiation_data)
-                else:
-                    await loop.run_in_executor(None, device.auto_connect)
-            await asyncio.sleep(1)
-
-    except (SerialException, OSError) as e:
-        state.is_connected = False
-        state.is_active = False
-        state.error_message = f"Connection lost: {e}"
-        device.disconnect()
-        await asyncio.sleep(2)
+                state.device_name = await asyncio.to_thread(device.device_info.get_hardware_model)
+            if state.is_active:
+                await fetch_radiation_data()
+        else:
+            async with device_lock:
+                await asyncio.to_thread(device.auto_connect)
+        await asyncio.sleep(1)
 
 
 def toggle_active():
     if state.is_connected:
         state.is_active = not state.is_active
+    else:
+        state.error_message = "Cannot start transmission. Device not connected!"
 
 
 @ui.refreshable
