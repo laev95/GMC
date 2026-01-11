@@ -30,21 +30,17 @@ class SerialManager:
     def __init__(self):
         self._conn: Serial | None = None
         self._ACK = 0xAA
-
-    @staticmethod
-    def _discover_ports() -> dict[str, str]:
-        possible: dict[str, str] = {}
-        for port in list_ports.comports():
-            if "USB" in port.device or "COM" in port.device:
-                possible[port.name] = port.device
-        return possible
+        self._valid_ports: dict[str, str] = {}
 
     def _get_default_config(self) -> ConnConfig:
-        ports = self._discover_ports()
-        if not ports:
+        for port in list_ports.comports():
+            if "USB" in port.device or "COM" in port.device:
+                self._valid_ports[port.name] = port.device
+
+        if not self._valid_ports:
             return ConnConfig(port=None)
 
-        first_port_device = next(iter(ports.values()))
+        first_port_device = next(iter(self._valid_ports.values()))
         return ConnConfig(port=first_port_device)
 
     def connect(self, cfg: ConnConfig = None) -> bool:
@@ -80,6 +76,7 @@ class SerialManager:
                 pass
             finally:
                 self._conn = None
+                self._valid_ports.clear()
 
     def write(self, data: bytes) -> None:
         if self._conn is None:
