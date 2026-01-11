@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from serial import Serial, SerialException
 from serial.tools import list_ports
 
+from src.gq.errors import NotConnectedError, ConnectionLostError, ReadTimeoutError, AckError
+
 
 @dataclass(frozen=True)
 class ConnConfig:
@@ -66,7 +68,7 @@ class SerialManager:
                 timeout=2
             )
             return True
-        except (SerialException, OSError):
+        except OSError:
             self._conn = None
             return False
 
@@ -74,25 +76,38 @@ class SerialManager:
         if self._conn:
             try:
                 self._conn.close()
-            except (SerialException, OSError):
+            except OSError:
                 pass
             finally:
                 self._conn = None
 
     def write(self, data: bytes) -> None:
-        if self._conn:
+        if self._conn is None:
+            raise NotConnectedError("write")
+        try:
             self._conn.write(data)
+        except (SerialException, OSError) as e:
+            self.disconnect()
+            raise ConnectionLostError("write", detail=str(e)) from e
 
     def read(self, n: int) -> bytes:
-        if self._conn is None: return b""
+        if self._conn is None:
+            raise NotConnectedError("read")
 
-        data = self._conn.read(n)
+        try:
+            data = self._conn.read(n)
+        except OSError as e:
+            raise ConnectionLostError("read", detail=str(e)) from e
+
         if len(data) < n:
-            raise OSError(f"Read timeout: Expected {n} bytes, received {len(data)}")
+            raise ReadTimeoutError(expected=n, received=len(data))
         return data
 
     def read_u32_be(self) -> int:
         return int.from_bytes(self.read(4), "big")
 
-    def read_ack(self) -> bool:
-        return self.read(1)[0] == self._ACK
+    def read_ack(self, b: bytes = None) -> bool:
+        read_byte = self.read(1)[0] if not b else b
+        if read_byte != self._ACK:
+            raise AckError(expected=self._ACK, received=read_byte)
+        return True
