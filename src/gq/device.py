@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .manager import SerialManager, ConnConfig
+from .manager import SerialManager
 from src.gq.services.impl.audio import AudioService
 from src.gq.services.impl.config import ConfigService
 from src.gq.services.impl.device_info import DeviceInfoService
@@ -13,9 +13,10 @@ from src.gq.services.impl.rtc import RTCService
 from src.gq.services.impl.sensors import SensorsService
 from src.gq.services.impl.wifi import WiFiService
 
-AUTO_CONNECT = ""
 
 class GMCDevice:
+    _AUTO_CONNECT = ""
+
     def __init__(self):
         self._manager = SerialManager()
         self.connection_status = False
@@ -32,7 +33,7 @@ class GMCDevice:
         self.sensors = SensorsService(self._manager)
         self.wifi = WiFiService(self._manager)
 
-    def connect(self, port: str = AUTO_CONNECT) -> None:
+    def connect(self, port: str = _AUTO_CONNECT) -> None:
         self.connection_status = self._manager.connect(port)
 
     def disconnect(self) -> None:
