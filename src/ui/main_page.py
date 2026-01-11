@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Coroutine
 
 from nicegui import ui, app
 
@@ -13,10 +14,12 @@ device_lock = asyncio.Lock()
 state = GlobalState()
 
 
-def shutdown():
+async def reset(msg: str) -> None:
     state.is_connected = False
     state.is_active = False
-    device.disconnect()
+    state.error_message = msg
+    async with device_lock:
+        await asyncio.to_thread(device.disconnect)
 
 
 async def fetch_history() -> None:
@@ -25,8 +28,7 @@ async def fetch_history() -> None:
             history = await asyncio.to_thread(device.history.get_history)
             state.history_data = str(history)
         except ServiceError as e:
-            state.error_message = f"Error fetching history: {e} ({e.__class__.__name__})"
-            shutdown()
+            await reset(f"Error fetching history: {e} ({e.__class__.__name__})")
 
 
 async def fetch_radiation_data() -> None:
@@ -40,11 +42,10 @@ async def fetch_radiation_data() -> None:
                 'cpm_low': device.radiation.get_cpm_low_tube()
             }))
         except ServiceError as e:
-            state.error_message = f"Error fetching radiation: {e} ({e.__class__.__name__})"
-            shutdown()
+            await reset(f"Error fetching radiation: {e} ({e.__class__.__name__})")
 
 
-async def device_live_data_loop():
+async def device_live_data_loop() -> None:
     while True:
         state.is_connected = device.connection_status
         if state.is_connected:
@@ -54,11 +55,11 @@ async def device_live_data_loop():
                 await fetch_radiation_data()
         else:
             async with device_lock:
-                await asyncio.to_thread(device.auto_connect)
+                await asyncio.to_thread(device.connect)
         await asyncio.sleep(1)
 
 
-def toggle_active():
+def toggle_active() -> None:
     if state.is_connected:
         state.is_active = not state.is_active
     else:
@@ -88,7 +89,7 @@ def app_ui():
     with ui.row().classes('items-center p-4'):
         ui.label().bind_text_from(state, 'device_name', backward=lambda v: f"Device: {v}").classes('text-h4')
         ui.icon('circle', color='red').bind_visibility_from(state, 'is_connected', backward=lambda x: not x).classes('text-h5')
-        ui.icon('circle', color='green').bind_visibility_from(state, 'is_connected')
+        ui.icon('circle', color='green').bind_visibility_from(state, 'is_connected').classes('text-h5')
 
     with ui.grid(columns=4).classes('gap-4 mx-auto w-full'):
         with ui.card().classes('col-span-1'):
@@ -127,6 +128,4 @@ def app_ui():
 
 
 app.on_startup(lambda: asyncio.create_task(device_live_data_loop()))
-app.on_shutdown(device.disconnect)
-app.on_shutdown(lambda: setattr(state, 'is_connected', False))
-app.on_shutdown(lambda: setattr(state, 'active', False))
+app.on_shutdown(reset)
