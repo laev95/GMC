@@ -18,7 +18,9 @@ T = TypeVar("T")
 class ServiceBase:
     """
     Common service behavior:
+
     - retries transient transport errors
+
     - attempts reconnect using SerialManager.connect() (default config)
     """
 
