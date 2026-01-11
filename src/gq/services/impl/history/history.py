@@ -4,12 +4,13 @@ from struct import pack
 from typing import Iterator, TYPE_CHECKING
 
 from src.gq.services.history.parser.parser import Parser
+from src.gq.services.service_base import ServiceBase
 
 if TYPE_CHECKING:
     from src.gq.manager import SerialManager
 
 
-class HistoryService:
+class HistoryService(ServiceBase):
     """
     Service for reading the internal flash memory (history) of the GQ GMC.
     Encapsulates the <SPIR>> commands according to RFC1801.
@@ -20,7 +21,7 @@ class HistoryService:
         :param manager: The central communication instance.
         :param flash_size: The size of the flash memory (Default GMC-500+: 16MB).
         """
-        self._manager = manager
+        super().__init__(manager)
         self._flash_size = flash_size
 
     def _spir_read(self, addr: int, length: int) -> bytes:
@@ -44,8 +45,10 @@ class HistoryService:
                    addr & 0xFF,
                    length)
 
-        self._manager.write(b"<SPIR" + cmd + b">>")
-        return self._manager.read(length)
+        def op() -> bytes:
+            self._manager.write(b"<SPIR" + cmd + b">>")
+            return self._manager.read(length)
+        return self._call("spir_read", op)
 
     def _iter_history_bytes(self, block_size: int = 4096, min_ff_tail: int = 512) -> Iterator[bytes]:
         """
@@ -83,32 +86,35 @@ class HistoryService:
         Reads the entire history and formats it for display.
         Returns a formatted string showing datetime, save_type, and tube for each segment.
         """
-        result = Parser(self._get_history_bytes()).parse_result()
-        records = result.records
-        issues = result.issues
+        def op() -> str:
+            result = Parser(self._get_history_bytes()).parse_result()
+            records = result.records
+            issues = result.issues
 
-        if not records:
-            return "No history data found."
+            if not records:
+                return "No history data found."
 
-        output_lines = []
-        for record in records:
-            if record.segment.values:
-                tube_info = f" | Tube: {record.tube}" if record.tube else ""
-                line = (
-                    f"{record.ts.strftime('%Y-%m-%d %H:%M:%S')} | {record.save_type}"
-                    f"{tube_info} | Reading bytes: {record.segment.reading_mode}"
-                )
-                output_lines.append(line)
-                output_lines.append(f"Values: {', '.join(str(value) for value in record.segment.values)}\n")
+            output_lines = []
+            for record in records:
+                if record.segment.values:
+                    tube_info = f" | Tube: {record.tube}" if record.tube else ""
+                    line = (
+                        f"{record.ts.strftime('%Y-%m-%d %H:%M:%S')} | {record.save_type}"
+                        f"{tube_info} | Reading bytes: {record.segment.reading_mode}"
+                    )
+                    output_lines.append(line)
+                    output_lines.append(f"Values: {', '.join(str(value) for value in record.segment.values)}\n")
 
-        if issues:
-            output_lines.append("\nWarnings:")
-            for i, issue in enumerate(issues, start=1):
-                msg = f"{i}. {issue.message} (offset={issue.offset}, state={issue.state})"
-                output_lines.append(msg)
-                if issue.raw_hex:
-                    output_lines.append(f"   tail_hex: {issue.raw_hex}")
-                if issue.context:
-                    output_lines.append(f"   context: {issue.context}")
+            if issues:
+                output_lines.append("\nWarnings:")
+                for i, issue in enumerate(issues, start=1):
+                    msg = f"{i}. {issue.message} (offset={issue.offset}, state={issue.state})"
+                    output_lines.append(msg)
+                    if issue.raw_hex:
+                        output_lines.append(f"   tail_hex: {issue.raw_hex}")
+                    if issue.context:
+                        output_lines.append(f"   context: {issue.context}")
 
-        return "\n".join(output_lines)
+            return "\n".join(output_lines)
+
+        return self._call("get_history", op)

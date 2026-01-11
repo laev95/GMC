@@ -42,8 +42,7 @@ class SensorsService:
         x = int.from_bytes(data[0:2], "big", signed=False)
         y = int.from_bytes(data[2:4], "big", signed=False)
         z = int.from_bytes(data[4:6], "big", signed=False)
-        if data[6] != self._manager._ACK:
-            raise IOError(f"Expected ack 0xAA as last byte, got 0x{data[6]:02X}")
+        self._manager.read_ack(bytes(data[6]))
         return GyroData(x=x, y=y, z=z)
 
     def get_temperature_raw(self) -> bytes:
