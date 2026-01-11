@@ -33,7 +33,7 @@ class GMCDevice:
         self.wifi = WiFiService(self._manager)
 
     def connect(self, port: str = AUTO_CONNECT) -> None:
-        self.connection_status = self._manager.connect(ConnConfig(port=port))
+        self.connection_status = self._manager.connect(port)
 
     def disconnect(self) -> None:
         self._manager.disconnect()

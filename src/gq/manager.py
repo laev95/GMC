@@ -32,7 +32,7 @@ class SerialManager:
         self._ACK = 0xAA
         self._valid_ports: dict[str, str] = {}
 
-    def _get_default_config(self) -> ConnConfig:
+    def _get_auto_config(self) -> ConnConfig:
         for port in list_ports.comports():
             if "USB" in port.device or "COM" in port.device:
                 self._valid_ports[port.name] = port.device
@@ -43,7 +43,9 @@ class SerialManager:
         first_port_device = next(iter(self._valid_ports.values()))
         return ConnConfig(port=first_port_device)
 
-    def connect(self, cfg: ConnConfig = None) -> bool:
+    def connect(self, port: str = "") -> bool:
+        cfg: ConnConfig
+
         if self._conn and self._conn.is_open:
             return True
 
@@ -51,8 +53,10 @@ class SerialManager:
             self._conn.open()
             return True
 
-        if not cfg:
-            cfg = self._get_default_config()
+        if port:
+            cfg = ConnConfig(port=port)
+        else:
+            cfg = self._get_auto_config()
             if not cfg.port:
                 return False
 
