@@ -13,6 +13,7 @@ from src.gq.services.impl.rtc import RTCService
 from src.gq.services.impl.sensors import SensorsService
 from src.gq.services.impl.wifi import WiFiService
 
+AUTO_CONNECT = ""
 
 class GMCDevice:
     def __init__(self):
@@ -31,7 +32,7 @@ class GMCDevice:
         self.sensors = SensorsService(self._manager)
         self.wifi = WiFiService(self._manager)
 
-    def connect(self, port: str = "") -> None:
+    def connect(self, port: str = AUTO_CONNECT) -> None:
         self.connection_status = self._manager.connect(ConnConfig(port=port))
 
     def disconnect(self) -> None:
