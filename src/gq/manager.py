@@ -87,7 +87,7 @@ class SerialManager:
             raise NotConnectedError("write")
         try:
             self._conn.write(data)
-        except (SerialException, OSError) as e:
+        except OSError as e:
             self.disconnect()
             raise ConnectionLostError("write", detail=str(e)) from e
 
