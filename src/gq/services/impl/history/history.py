@@ -23,6 +23,7 @@ class HistoryService(ServiceBase):
         """
         super().__init__(manager)
         self._flash_size = flash_size
+        self._addr = 0x000000
 
     def _spir_read(self, addr: int, length: int) -> bytes:
         """
@@ -37,8 +38,6 @@ class HistoryService(ServiceBase):
         if not (1 <= length <= 4096):
             raise ValueError("length must be 1..4096")
 
-        # RFC1801: <SPIR[A2][A1][A0][L1][L0]>>
-        # A2-A0 are 3 bytes address, L1-L0 are 2 bytes length.
         cmd = pack(">BBBH",
                    (addr >> 16) & 0xFF,
                    (addr >> 8) & 0xFF,
@@ -54,10 +53,8 @@ class HistoryService(ServiceBase):
         """
         Iterates over the flash memory until no more data is present.
         """
-        addr = 0x000000
-
         while True:
-            block = self._spir_read(addr, block_size)
+            block = self._spir_read(self._addr, block_size)
 
             if all(b == 0xFF for b in block):
                 return
@@ -73,8 +70,8 @@ class HistoryService(ServiceBase):
                 return
 
             yield block
-            addr += block_size
-            if addr >= self._flash_size:
+            self._addr += block_size
+            if self._addr >= self._flash_size:
                 return
 
     def _get_history_bytes(self) -> bytes:
