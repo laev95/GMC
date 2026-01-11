@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from src.gq.services.service_base import ServiceBase
+
 if TYPE_CHECKING:
     from src.gq.manager import SerialManager
 

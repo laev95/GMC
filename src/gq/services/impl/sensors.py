@@ -48,7 +48,7 @@ class SensorsService:
     def get_temperature_raw(self) -> bytes:
         """
         RFC1801: <GETTEMP>> is, according to documentation, not supported on several models.
-        Therefore left as a raw read (length not normalized).
+        Therefore, left as a raw read (length not normalized).
         """
         self._manager.write(b"<GETTEMP>>")
         return self._manager.read(32)

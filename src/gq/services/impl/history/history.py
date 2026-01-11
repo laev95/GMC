@@ -3,7 +3,7 @@ from __future__ import annotations
 from struct import pack
 from typing import Iterator, TYPE_CHECKING
 
-from src.gq.services.history.parser.parser import Parser
+from src.gq.services.impl.history.parser.parser import Parser
 from src.gq.services.service_base import ServiceBase
 
 if TYPE_CHECKING:

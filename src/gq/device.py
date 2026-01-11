@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from .manager import SerialManager, ConnConfig
-from .services.audio import AudioService
-from .services.config import ConfigService
-from .services.device_info import DeviceInfoService
-from .services.heartbeat import HeartbeatService
-from .services.history.history import HistoryService
-from .services.input_keys import InputKeysService
-from .services.power import PowerService
-from .services.radiation import RadiationService
-from .services.rtc import RTCService
-from .services.sensors import SensorsService
-from .services.wifi import WiFiService
+from src.gq.services.impl.audio import AudioService
+from src.gq.services.impl.config import ConfigService
+from src.gq.services.impl.device_info import DeviceInfoService
+from src.gq.services.impl.heartbeat import HeartbeatService
+from src.gq.services.impl.history.history import HistoryService
+from src.gq.services.impl.input_keys import InputKeysService
+from src.gq.services.impl.power import PowerService
+from src.gq.services.impl.radiation import RadiationService
+from src.gq.services.impl.rtc import RTCService
+from src.gq.services.impl.sensors import SensorsService
+from src.gq.services.impl.wifi import WiFiService
 
 
 class GMCDevice:
