@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Coroutine
 
 from nicegui import ui, app
 
@@ -14,7 +13,7 @@ device_lock = asyncio.Lock()
 state = GlobalState()
 
 
-async def reset(msg: str) -> None:
+async def reset_device(msg: str) -> None:
     state.is_connected = False
     state.is_active = False
     state.error_message = msg
@@ -28,7 +27,7 @@ async def fetch_history() -> None:
             history = await asyncio.to_thread(device.history.get_history)
             state.history_data = str(history)
         except ServiceError as e:
-            await reset(f"Error fetching history: {e} ({e.__class__.__name__})")
+            await reset_device(f"Error fetching history: {e} ({e.__class__.__name__})")
 
 
 async def fetch_radiation_data() -> None:
@@ -42,7 +41,7 @@ async def fetch_radiation_data() -> None:
                 'cpm_low': device.radiation.get_cpm_low_tube()
             }))
         except ServiceError as e:
-            await reset(f"Error fetching radiation: {e} ({e.__class__.__name__})")
+            await reset_device(f"Error fetching radiation: {e} ({e.__class__.__name__})")
 
 
 async def device_live_data_loop() -> None:
@@ -88,7 +87,8 @@ def app_ui():
 
     with ui.row().classes('items-center p-4'):
         ui.label().bind_text_from(state, 'device_name', backward=lambda v: f"Device: {v}").classes('text-h4')
-        ui.icon('circle', color='red').bind_visibility_from(state, 'is_connected', backward=lambda x: not x).classes('text-h5')
+        ui.icon('circle', color='red').bind_visibility_from(state, 'is_connected', backward=lambda x: not x).classes(
+            'text-h5')
         ui.icon('circle', color='green').bind_visibility_from(state, 'is_connected').classes('text-h5')
 
     with ui.grid(columns=4).classes('gap-4 mx-auto w-full'):
@@ -128,4 +128,4 @@ def app_ui():
 
 
 app.on_startup(lambda: asyncio.create_task(device_live_data_loop()))
-app.on_shutdown(reset)
+app.on_shutdown(reset_device)

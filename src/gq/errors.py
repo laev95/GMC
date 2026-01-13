@@ -42,9 +42,11 @@ class AckError(ProtocolError):
 
 class ServiceError(GMCError):
     """Service-layer error (operation-level failures)."""
+
     def __init__(self, msg: str, operation: str = ""):
         self.operation = operation
         super().__init__(msg)
+
 
 class DeviceUnavailableError(ServiceError):
     def __init__(self, operation: str, detail: str | None = None):
@@ -52,6 +54,7 @@ class DeviceUnavailableError(ServiceError):
         if detail:
             msg = f"{msg} {detail}"
         super().__init__(msg, operation)
+
 
 class DeviceProtocolError(ServiceError):
     def __init__(self, operation: str, detail: str | None = None):

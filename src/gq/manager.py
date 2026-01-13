@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from serial import Serial, SerialException
+from serial import Serial
 from serial.tools import list_ports
 
 from src.gq.errors import NotConnectedError, ConnectionLostError, ReadTimeoutError, AckError
@@ -14,6 +14,7 @@ class ConnConfig:
     baud_rate: int = 115200
     stop_bits: int = 1
 
+
 class SerialManager:
     """
     Manages serial communication with external devices.
@@ -22,9 +23,6 @@ class SerialManager:
     connecting to a serial device, sending and receiving data, and closing
     the connection. It can handle default configurations and includes support
     for reading specific data formats.
-
-    :ivar _ACK: Acknowledgment byte used for communication validation.
-    :type _ACK: int
     """
 
     def __init__(self):

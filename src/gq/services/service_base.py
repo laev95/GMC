@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import time
-from typing import Callable, TypeVar
+from typing import Callable, TypeVar, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.gq.manager import SerialManager
 
 from src.gq.errors import (
     NotConnectedError,
@@ -24,7 +27,7 @@ class ServiceBase:
     - attempts reconnect using SerialManager.connect() (default config)
     """
 
-    def __init__(self, manager, *, max_attempts: int = 2, backoff_s: float = 0.15):
+    def __init__(self, manager: SerialManager, *, max_attempts: int = 2, backoff_s: float = 0.15):
         if max_attempts < 1:
             raise ValueError("max_attempts must be >= 1")
 
