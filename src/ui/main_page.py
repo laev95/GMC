@@ -22,26 +22,32 @@ async def reset_device(msg: str) -> None:
 
 
 async def fetch_history() -> None:
-    async with device_lock:
-        try:
-            history = await asyncio.to_thread(device.history.get_history)
-            state.history_data = str(history)
-        except ServiceError as e:
-            await reset_device(f"Error fetching history: {e} ({e.__class__.__name__})")
+    if state.is_connected:
+        async with device_lock:
+            try:
+                history = await asyncio.to_thread(device.history.get_history)
+                state.history_data = str(history)
+            except ServiceError as e:
+                await reset_device(f"Error fetching history: {e} ({e.__class__.__name__})")
+    else:
+        state.error_message = "Cannot fetch history data. Device not connected!"
 
 
 async def fetch_radiation_data() -> None:
-    async with device_lock:
-        try:
-            await asyncio.to_thread(lambda: state.radiation.update({
-                'cpm': device.radiation.get_cpm(),
-                'cps': device.radiation.get_cps(),
-                'max_cps': device.radiation.get_max_cps(),
-                'cpm_high': device.radiation.get_cpm_high_tube(),
-                'cpm_low': device.radiation.get_cpm_low_tube()
-            }))
-        except ServiceError as e:
-            await reset_device(f"Error fetching radiation: {e} ({e.__class__.__name__})")
+    if state.is_connected:
+        async with device_lock:
+            try:
+                await asyncio.to_thread(lambda: state.radiation.update({
+                    'cpm': device.radiation.get_cpm(),
+                    'cps': device.radiation.get_cps(),
+                    'max_cps': device.radiation.get_max_cps(),
+                    'cpm_high': device.radiation.get_cpm_high_tube(),
+                    'cpm_low': device.radiation.get_cpm_low_tube()
+                }))
+            except ServiceError as e:
+                await reset_device(f"Error fetching radiation: {e} ({e.__class__.__name__})")
+    else:
+        state.error_message = "Cannot fetch radiation data. Device not connected!"
 
 
 async def device_live_data_loop() -> None:
@@ -117,7 +123,7 @@ def app_ui():
                     ui.label().bind_text_from(state.radiation, 'cpm_low', backward=lambda v: f"Low Tube CPM: {v}")
 
         with ui.card().classes('col-span-3'):
-            ui.label('History Data').classes('text-h5 mb-4')
+            ui.label('GQ GMC History Data').classes('text-h5 mb-4')
 
             ui.button("Get history data", on_click=fetch_history).props('icon=history')
 

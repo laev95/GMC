@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from src.gq.services.service_base import ServiceBase
+
 if TYPE_CHECKING:
     from src.gq.manager import SerialManager
 
@@ -20,7 +22,7 @@ class DeviceDateTime:
     second: int
 
 
-class RTCService:
+class RTCService(ServiceBase):
     """
     Service for real-time clock (RTC) related commands of a GQ GMC Geiger counter.
     Encapsulates the commands according to RFC1801.
@@ -32,21 +34,23 @@ class RTCService:
 
         :param manager: The central communication instance.
         """
-        self._manager = manager
+        super().__init__(manager)
 
     def get_datetime(self) -> DeviceDateTime:
         """
         RFC1801: <GETDATETIME>> returns 7 bytes:
           YY MM DD HH MM SS 0xAA
         """
-        self._manager.write(b"<GETDATETIME>>")
-        data = self._manager.read(7)
-        if len(data) != 7:
-            raise OSError(f"Expected 7 bytes, got {len(data)}")
-        yy, mm, dd, hh, mi, ss, ack = data
-        if ack != self._manager._ACK:
-            raise OSError(f"Expected ack 0xAA as last byte, got 0x{ack:02X}")
-        return DeviceDateTime(yy, mm, dd, hh, mi, ss)
+        def op() -> DeviceDateTime:
+            self._manager.write(b"<GETDATETIME>>")
+            data = self._manager.read(7)
+            if len(data) != 7:
+                raise OSError(f"Expected 7 bytes, got {len(data)}")
+            yy, mm, dd, hh, mi, ss, ack = data
+            if ack != self._manager._ACK:
+                raise OSError(f"Expected ack 0xAA as last byte, got 0x{ack:02X}")
+            return DeviceDateTime(yy, mm, dd, hh, mi, ss)
+        return self._call("get_datetime", op)
 
     def set_date_year(self, year_since_2000: int) -> bool:
         """
@@ -55,8 +59,7 @@ class RTCService:
         """
         if not (0 <= year_since_2000 <= 0xFF):
             raise ValueError("year_since_2000 must be 0..255 (0=2000)")
-        self._manager.write(b"<SETDATEYY" + bytes([year_since_2000]) + b">>")
-        return self._manager.read_ack()
+        return self._cmd_ack("set_date_year", b"<SETDATEYY" + bytes([year_since_2000]) + b">>")
 
     def set_date_month(self, month: int) -> bool:
         """
@@ -65,8 +68,7 @@ class RTCService:
         """
         if not (1 <= month <= 12):
             raise ValueError("month must be 1..12")
-        self._manager.write(b"<SETDATEMM" + bytes([month]) + b">>")
-        return self._manager.read_ack()
+        return self._cmd_ack("set_date_month", b"<SETDATEMM" + bytes([month]) + b">>")
 
     def set_date_day(self, day: int) -> bool:
         """
@@ -75,8 +77,7 @@ class RTCService:
         """
         if not (1 <= day <= 31):
             raise ValueError("day must be 1..31")
-        self._manager.write(b"<SETDATEDD" + bytes([day]) + b">>")
-        return self._manager.read_ack()
+        return self._cmd_ack("set_date_day", b"<SETDATEDD" + bytes([day]) + b">>")
 
     def set_time_hour(self, hour: int) -> bool:
         """
@@ -85,8 +86,7 @@ class RTCService:
         """
         if not (0 <= hour <= 23):
             raise ValueError("hour must be 0..23")
-        self._manager.write(b"<SETTIMEHH" + bytes([hour]) + b">>")
-        return self._manager.read_ack()
+        return self._cmd_ack("set_time_hour", b"<SETTIMEHH" + bytes([hour]) + b">>")
 
     def set_time_minute(self, minute: int) -> bool:
         """
@@ -95,8 +95,7 @@ class RTCService:
         """
         if not (0 <= minute <= 59):
             raise ValueError("minute must be 0..59")
-        self._manager.write(b"<SETTIMEMM" + bytes([minute]) + b">>")
-        return self._manager.read_ack()
+        return self._cmd_ack("set_time_minute", b"<SETTIMEMM" + bytes([minute]) + b">>")
 
     def set_time_second(self, second: int) -> bool:
         """
@@ -105,8 +104,7 @@ class RTCService:
         """
         if not (0 <= second <= 59):
             raise ValueError("second must be 0..59")
-        self._manager.write(b"<SETTIMESS" + bytes([second]) + b">>")
-        return self._manager.read_ack()
+        return self._cmd_ack("set_time_second", b"<SETTIMESS" + bytes([second]) + b">>")
 
     def set_datetime(
         self,
@@ -139,5 +137,4 @@ class RTCService:
             raise ValueError("second must be 0..59")
 
         payload = bytes([year_since_2000, month, day, hour, minute, second])
-        self._manager.write(b"<SETDATETIME" + payload + b">>")
-        return self._manager.read_ack()
+        return self._cmd_ack("set_datetime", b"<SETDATETIME" + payload + b">>")

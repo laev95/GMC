@@ -3,6 +3,8 @@ from __future__ import annotations
 from struct import pack
 from typing import TYPE_CHECKING
 
+from src.gq.services.service_base import ServiceBase
+
 if TYPE_CHECKING:
     from src.gq.manager import SerialManager
 
@@ -11,7 +13,7 @@ Configuration commands for the GQ device. Sensitive settings, not well documente
 """
 
 
-class ConfigService:
+class ConfigService(ServiceBase):
     """
     Service for configuration-related commands of a GQ GMC Geiger counter.
     Encapsulates the commands according to RFC1801.
@@ -23,21 +25,22 @@ class ConfigService:
 
         :param manager: The central communication instance.
         """
-        self._manager = manager
+        super().__init__(manager)
 
     def get_config_bytes(self) -> bytes:
         """
         RFC1801: <GETCFG>> returns the configuration bytes (512 bytes).
         """
-        self._manager.write(b"<GETCFG>>")
-        return self._manager.read(512)
+        def op() -> bytes:
+            self._manager.write(b"<GETCFG>>")
+            return self._manager.read(512)
+        return self._call("get_config_bytes", op)
 
     def erase_config(self) -> bool:
         """
         RFC1801: <ECFG>> erases the configuration.
         """
-        self._manager.write(b"<ECFG>>")
-        return self._manager.read_ack()
+        return self._cmd_ack("erase_config", b"<ECFG>>")
 
     def write_config_byte(self, addr: int, value: int) -> bool:
         """
@@ -51,15 +54,13 @@ class ConfigService:
         a1 = (addr >> 8) & 0x01
         a0 = addr & 0xFF
         cmd = pack(">BBB", a1, a0, value)
-        self._manager.write(b"<WCFG" + cmd + b">>")
-        return self._manager.read_ack()
+        return self._cmd_ack("write_config_byte", b"<WCFG" + cmd + b">>")
 
     def cfg_update(self) -> bool:
         """
         RFC1801: <CFGUPDATE>> updates the configuration.
         """
-        self._manager.write(b"<CFGUPDATE>>")
-        return self._manager.read_ack()
+        return self._cmd_ack("cfg_update", b"<CFGUPDATE>>")
 
     def write_config_block(self, cfg512: bytes, *, do_erase: bool = True, do_update: bool = True) -> bool:
         """

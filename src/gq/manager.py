@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Dict
 
 from serial import Serial
 from serial.tools import list_ports
@@ -40,6 +41,9 @@ class SerialManager:
 
         first_port_device = next(iter(self._valid_ports.values()))
         return ConnConfig(port=first_port_device)
+
+    def get_valid_ports(self) -> Dict[str, str]:
+        return self._valid_ports
 
     def connect(self, port: str = "") -> bool:
         cfg: ConnConfig
@@ -86,7 +90,6 @@ class SerialManager:
         try:
             self._conn.write(data)
         except OSError as e:
-            self.disconnect()
             raise ConnectionLostError("write", detail=str(e)) from e
 
     def read(self, n: int) -> bytes:

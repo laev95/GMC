@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from src.gq.services.service_base import ServiceBase
+
 if TYPE_CHECKING:
     from src.gq.manager import SerialManager
 
 
-class InputKeysService:
+class InputKeysService(ServiceBase):
     """
     Service for sending key presses to a GQ GMC Geiger counter.
     Encapsulates the commands according to RFC1801.
@@ -18,7 +20,7 @@ class InputKeysService:
 
         :param manager: The central communication instance.
         """
-        self._manager = manager
+        super().__init__(manager)
 
     def send_key(self, key: int) -> None:
         """
@@ -29,4 +31,9 @@ class InputKeysService:
         """
         if not (0 <= key <= 3):
             raise ValueError("key must be 0..3")
-        self._manager.write(f"<KEY{key}>>".encode("ascii"))
+
+        def op() -> None:
+            self._manager.write(f"<KEY{key}>>".encode("ascii"))
+            return None
+
+        self._call("send_key", op)
