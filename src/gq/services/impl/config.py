@@ -46,10 +46,8 @@ class ConfigService(ServiceBase):
         """
         RFC1801: <WCFG[A1][A0][V0]>> writes a single configuration byte.
         """
-        if not (0 <= addr <= 0x1FF):
-            raise ValueError("addr must be 0..511")
-        if not (0 <= value <= 0xFF):
-            raise ValueError("value must be 0..255")
+        self._validate_range("write_config_byte", "addr", addr, 0, 0x1FF)
+        self._validate_range("write_config_byte", "value", value, 0, 0xFF)
 
         a1 = (addr >> 8) & 0x01
         a0 = addr & 0xFF
@@ -66,8 +64,7 @@ class ConfigService(ServiceBase):
         """
         Writes a full 512-byte configuration block.
         """
-        if len(cfg512) != 512:
-            raise ValueError("cfg512 must be exactly 512 bytes")
+        self._validate_byte_length("write_config_block", "cfg512", cfg512, 512)
 
         ok = True
         if do_erase:

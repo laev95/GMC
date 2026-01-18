@@ -12,6 +12,7 @@ from src.gq.errors import (
     ReadTimeoutError,
     DeviceUnavailableError,
     DeviceProtocolError,
+    DeviceConfigurationError,
     AckError,
 )
 
@@ -59,3 +60,33 @@ class ServiceBase:
                 raise DeviceProtocolError(operation, detail=str(e)) from e
 
         raise AssertionError("Unreachable: max_attempts >= 1, loop must return or raise.")
+
+    @staticmethod
+    def _validate_range(operation: str, param_name: str, value: int, min_val: int, max_val: int) -> None:
+        """
+        Validates that a parameter is within an inclusive range.
+
+        :param operation: Name of the operation (for error message).
+        :param param_name: Name of the parameter being validated.
+        :param value: The value to validate.
+        :param min_val: Minimum allowed value (inclusive).
+        :param max_val: Maximum allowed value (inclusive).
+        :raises DeviceConfigurationError: If value is out of range.
+        """
+        if not (min_val <= value <= max_val):
+            raise DeviceConfigurationError(operation, f"{param_name} must be {min_val}..{max_val}")
+
+    @staticmethod
+    def _validate_byte_length(operation: str, param_name: str, data: bytes, expected_length: int) -> None:
+        """
+        Validates that a bytes object has the expected length.
+
+        :param operation: Name of the operation (for error message).
+        :param param_name: Name of the parameter being validated.
+        :param data: The bytes data to validate.
+        :param expected_length: Expected length in bytes.
+        :raises DeviceConfigurationError: If length doesn't match.
+        """
+        if len(data) != expected_length:
+            raise DeviceConfigurationError(operation, f"{param_name} must be exactly {expected_length} bytes")
+

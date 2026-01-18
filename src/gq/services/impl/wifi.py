@@ -73,8 +73,7 @@ class WiFiService(ServiceBase):
         The RFC describes "Param in hex". In practice, it is usually a 1-byte raw value (0..255),
         analogous to other [D0] parameters.
         """
-        if not (0 <= period <= 0xFF):
-            raise ValueError("period must be 0..255")
+        self._validate_range("set_period_hex", "period", period, 0, 0xFF)
         return self._cmd_ack("set_period_hex", b"<SETPERIOD" + bytes([period]) + b">>")
 
     def wifi_on(self) -> bool:

@@ -40,12 +40,9 @@ class SensorsService(ServiceBase):
         def op() -> GyroData:
             self._manager.write(b"<GETGYRO>>")
             data = self._manager.read(7)
-            if len(data) != 7:
-                raise IOError(f"Expected 7 bytes, got {len(data)}")
             x = int.from_bytes(data[0:2], "big", signed=False)
             y = int.from_bytes(data[2:4], "big", signed=False)
             z = int.from_bytes(data[4:6], "big", signed=False)
-            # last byte must be ACK
             ack = data[6]
             self._manager.read_ack(bytes([ack]))
             return GyroData(x=x, y=y, z=z)

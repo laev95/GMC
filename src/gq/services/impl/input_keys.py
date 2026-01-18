@@ -29,8 +29,7 @@ class InputKeysService(ServiceBase):
           - <KEY[D0]>>
           - or explicitly: <KEY0>> .. <KEY3>>
         """
-        if not (0 <= key <= 3):
-            raise ValueError("key must be 0..3")
+        self._validate_range("send_key", "key", key, 0, 3)
 
         def op() -> None:
             self._manager.write(f"<KEY{key}>>".encode("ascii"))

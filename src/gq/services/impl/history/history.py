@@ -33,10 +33,8 @@ class HistoryService(ServiceBase):
 
         A2-A0 are 3 bytes address, L1-L0 are 2 bytes length.
         """
-        if not (0 <= addr <= 0xFFFFFF):
-            raise ValueError("addr must be 0..0xFFFFFF")
-        if not (1 <= length <= 4096):
-            raise ValueError("length must be 1..4096")
+        self._validate_range("spir_read", "addr", addr, 0, 0xFFFFFF)
+        self._validate_range("spir_read", "length", length, 1, 4096)
 
         cmd = pack(">BBBH",
                    (addr >> 16) & 0xFF,

@@ -48,6 +48,14 @@ class ServiceError(GMCError):
         super().__init__(msg)
 
 
+class DeviceConfigurationError(ServiceError):
+    def __init__(self, operation: str, detail: str | None = None):
+        msg = f"Device configuration error during {operation}."
+        if detail:
+            msg = f"{msg} {detail}"
+        super().__init__(msg, operation)
+
+
 class DeviceUnavailableError(ServiceError):
     def __init__(self, operation: str, detail: str | None = None):
         msg = f"Device unavailable while performing {operation}."

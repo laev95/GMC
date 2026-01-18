@@ -44,11 +44,8 @@ class RTCService(ServiceBase):
         def op() -> DeviceDateTime:
             self._manager.write(b"<GETDATETIME>>")
             data = self._manager.read(7)
-            if len(data) != 7:
-                raise OSError(f"Expected 7 bytes, got {len(data)}")
             yy, mm, dd, hh, mi, ss, ack = data
-            if ack != self._manager._ACK:
-                raise OSError(f"Expected ack 0xAA as last byte, got 0x{ack:02X}")
+            self._manager.read_ack(bytes([ack]))
             return DeviceDateTime(yy, mm, dd, hh, mi, ss)
         return self._call("get_datetime", op)
 
@@ -57,8 +54,7 @@ class RTCService(ServiceBase):
         RFC1801: <SETDATEYY[D0]>> sets the year (since 2000 as 1 byte).
         Returns: 0xAA (_ACK)
         """
-        if not (0 <= year_since_2000 <= 0xFF):
-            raise ValueError("year_since_2000 must be 0..255 (0=2000)")
+        self._validate_range("set_date_year", "year_since_2000", year_since_2000, 0, 0xFF)
         return self._cmd_ack("set_date_year", b"<SETDATEYY" + bytes([year_since_2000]) + b">>")
 
     def set_date_month(self, month: int) -> bool:
@@ -66,8 +62,7 @@ class RTCService(ServiceBase):
         RFC1801: <SETDATEMM[D0]>> sets the month (1..12).
         Returns: 0xAA (_ACK)
         """
-        if not (1 <= month <= 12):
-            raise ValueError("month must be 1..12")
+        self._validate_range("set_date_month", "month", month, 1, 12)
         return self._cmd_ack("set_date_month", b"<SETDATEMM" + bytes([month]) + b">>")
 
     def set_date_day(self, day: int) -> bool:
@@ -75,8 +70,7 @@ class RTCService(ServiceBase):
         RFC1801: <SETDATEDD[D0]>> sets the day (1..31).
         Returns: 0xAA (_ACK)
         """
-        if not (1 <= day <= 31):
-            raise ValueError("day must be 1..31")
+        self._validate_range("set_date_day", "day", day, 1, 31)
         return self._cmd_ack("set_date_day", b"<SETDATEDD" + bytes([day]) + b">>")
 
     def set_time_hour(self, hour: int) -> bool:
@@ -84,8 +78,7 @@ class RTCService(ServiceBase):
         RFC1801: <SETTIMEHH[D0]>> sets the hour (0..23).
         Returns: 0xAA (_ACK)
         """
-        if not (0 <= hour <= 23):
-            raise ValueError("hour must be 0..23")
+        self._validate_range("set_time_hour", "hour", hour, 0, 23)
         return self._cmd_ack("set_time_hour", b"<SETTIMEHH" + bytes([hour]) + b">>")
 
     def set_time_minute(self, minute: int) -> bool:
@@ -93,8 +86,7 @@ class RTCService(ServiceBase):
         RFC1801: <SETTIMEMM[D0]>> sets the minute (0..59).
         Returns: 0xAA (_ACK)
         """
-        if not (0 <= minute <= 59):
-            raise ValueError("minute must be 0..59")
+        self._validate_range("set_time_minute", "minute", minute, 0, 59)
         return self._cmd_ack("set_time_minute", b"<SETTIMEMM" + bytes([minute]) + b">>")
 
     def set_time_second(self, second: int) -> bool:
@@ -102,8 +94,7 @@ class RTCService(ServiceBase):
         RFC1801: <SETTIMESS[D0]>> sets the second (0..59).
         Returns: 0xAA (_ACK)
         """
-        if not (0 <= second <= 59):
-            raise ValueError("second must be 0..59")
+        self._validate_range("set_time_second", "second", second, 0, 59)
         return self._cmd_ack("set_time_second", b"<SETTIMESS" + bytes([second]) + b">>")
 
     def set_datetime(
@@ -123,18 +114,12 @@ class RTCService(ServiceBase):
           YY = years since 2000
           MM,DD,HH,MM,SS as usual
         """
-        if not (0 <= year_since_2000 <= 0xFF):
-            raise ValueError("year_since_2000 must be 0..255")
-        if not (1 <= month <= 12):
-            raise ValueError("month must be 1..12")
-        if not (1 <= day <= 31):
-            raise ValueError("day must be 1..31")
-        if not (0 <= hour <= 23):
-            raise ValueError("hour must be 0..23")
-        if not (0 <= minute <= 59):
-            raise ValueError("minute must be 0..59")
-        if not (0 <= second <= 59):
-            raise ValueError("second must be 0..59")
+        self._validate_range("set_datetime", "year_since_2000", year_since_2000, 0, 0xFF)
+        self._validate_range("set_datetime", "month", month, 1, 12)
+        self._validate_range("set_datetime", "day", day, 1, 31)
+        self._validate_range("set_datetime", "hour", hour, 0, 23)
+        self._validate_range("set_datetime", "minute", minute, 0, 59)
+        self._validate_range("set_datetime", "second", second, 0, 59)
 
         payload = bytes([year_since_2000, month, day, hour, minute, second])
         return self._cmd_ack("set_datetime", b"<SETDATETIME" + payload + b">>")
