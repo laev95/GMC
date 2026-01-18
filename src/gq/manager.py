@@ -6,7 +6,7 @@ from typing import Dict
 from serial import Serial
 from serial.tools import list_ports
 
-from src.gq.errors import NotConnectedError, ConnectionLostError, ReadTimeoutError, AckError
+from src.gq.errors import NotConnectedError, ConnectionLostError, ReadTimeoutError, AckError, ProtocolError
 
 
 @dataclass(frozen=True)
@@ -92,17 +92,17 @@ class SerialManager:
         except OSError as e:
             raise ConnectionLostError("write", detail=str(e)) from e
 
-    def read(self, n: int) -> bytes:
+    def read(self, bytes_len: int) -> bytes:
         if self._conn is None:
             raise NotConnectedError("read")
 
         try:
-            data = self._conn.read(n)
+            data = self._conn.read(bytes_len)
         except OSError as e:
             raise ConnectionLostError("read", detail=str(e)) from e
 
-        if len(data) < n:
-            raise ReadTimeoutError(expected=n, received=len(data))
+        if len(data) < bytes_len:
+            raise ReadTimeoutError(expected=bytes_len, received=len(data))
         return data
 
     def read_u32_be(self) -> int:
