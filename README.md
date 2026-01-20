@@ -22,7 +22,7 @@ The interface is primarily designed for the **GMC-500+** model but supports the 
 
 ### Prerequisites
 
-- Python 3.9+
+- Python 3.7+
 - A GQ GMC Geiger counter (connected via USB)
 
 ### Installing Dependencies

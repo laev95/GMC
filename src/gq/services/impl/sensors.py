@@ -8,6 +8,7 @@ from src.gq.services.service_base import ServiceBase
 if TYPE_CHECKING:
     from src.gq.manager import SerialManager
 
+
 @dataclass(frozen=True)
 class GyroData:
     """
@@ -37,15 +38,16 @@ class SensorsService(ServiceBase):
         RFC1801: <GETGYRO>> → 7 bytes:
           X_MSB X_LSB Y_MSB Y_LSB Z_MSB Z_LSB 0xAA
         """
+
         def op() -> GyroData:
             self._manager.write(b"<GETGYRO>>")
             data = self._manager.read(7)
             x = int.from_bytes(data[0:2], "big", signed=False)
             y = int.from_bytes(data[2:4], "big", signed=False)
             z = int.from_bytes(data[4:6], "big", signed=False)
-            ack = data[6]
-            self._manager.read_ack(bytes([ack]))
+            self._manager.read_ack(bytes([data[6]]))
             return GyroData(x=x, y=y, z=z)
+
         return self._call("get_gyro", op)
 
     def get_temperature_raw(self) -> bytes:
@@ -53,7 +55,9 @@ class SensorsService(ServiceBase):
         RFC1801: <GETTEMP>> is, according to documentation, not supported on several models.
         Therefore, left as a raw read (length not normalized).
         """
+
         def op() -> bytes:
             self._manager.write(b"<GETTEMP>>")
             return self._manager.read(32)
+
         return self._call("get_temperature_raw", op)

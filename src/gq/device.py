@@ -38,3 +38,6 @@ class GMCDevice:
 
     def disconnect(self) -> None:
         self._manager.disconnect()
+
+    def get_available_ports(self) -> dict[str, str]:
+        return self._manager.get_valid_ports()

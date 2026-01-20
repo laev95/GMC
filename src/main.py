@@ -1,10 +1,11 @@
-from src.ui.main_page import app_ui, ui
-
+from tkinter import *
+from src.ui.client import GMCDataViewer
 
 def main():
-    app_ui()
-    ui.run()
+    root = Tk()
+    app = GMCDataViewer(root)
+    app.run()
 
 
-if __name__ in {"__main__", "__mp_main__"}:
+if __name__ == "__main__":
     main()

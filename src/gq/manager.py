@@ -6,11 +6,14 @@ from typing import Dict
 from serial import Serial
 from serial.tools import list_ports
 
-from src.gq.errors import NotConnectedError, ConnectionLostError, ReadTimeoutError, AckError, ProtocolError
+from src.gq.errors import NotConnectedError, ConnectionLostError, ReadTimeoutError, AckError
 
 
 @dataclass(frozen=True)
 class ConnConfig:
+    """
+    Defaults for serial connection to GMC 500 and 600 series.
+    """
     port: str | None
     baud_rate: int = 115200
     stop_bits: int = 1
@@ -18,24 +21,21 @@ class ConnConfig:
 
 class SerialManager:
     """
-    Manages serial communication with external devices.
-
-    This class provides functionality for detecting available serial ports,
-    connecting to a serial device, sending and receiving data, and closing
-    the connection. It can handle default configurations and includes support
-    for reading specific data formats.
+    Manages serial communication with GMC devices.
     """
-
     def __init__(self):
         self._conn: Serial | None = None
         self._ACK = 0xAA
         self._valid_ports: dict[str, str] = {}
 
-    def _get_auto_config(self) -> ConnConfig:
+    def _detect_ports(self) -> None:
+        self._valid_ports.clear()
         for port in list_ports.comports():
             if "USB" in port.device or "COM" in port.device:
                 self._valid_ports[port.name] = port.device
 
+    def _get_auto_config(self) -> ConnConfig:
+        self._detect_ports()
         if not self._valid_ports:
             return ConnConfig(port=None)
 
@@ -43,6 +43,7 @@ class SerialManager:
         return ConnConfig(port=first_port_device)
 
     def get_valid_ports(self) -> Dict[str, str]:
+        self._detect_ports()
         return self._valid_ports
 
     def connect(self, port: str = "") -> bool:
@@ -109,6 +110,12 @@ class SerialManager:
         return int.from_bytes(self.read(4), "big")
 
     def read_ack(self, b: bytes = None) -> bool:
+        """
+        Reads and validates an ACK byte from the device.
+        :param b: Optional byte to validate instead of reading.
+        :return: True if the byte is ACK byte.
+        :raises AckError: If the byte is not ACK byte.
+        """
         read_byte = self.read(1)[0] if not b else b
         if read_byte != self._ACK:
             raise AckError(expected=self._ACK, received=read_byte)

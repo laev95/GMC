@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 class DeviceDateTime:
     """
     Data carrier for <GETDATETIME>>.
-    year_since_2000: 0 corresponds to the year 2000.
     """
     year_since_2000: int
     month: int
@@ -52,7 +51,7 @@ class RTCService(ServiceBase):
     def set_date_year(self, year_since_2000: int) -> bool:
         """
         RFC1801: <SETDATEYY[D0]>> sets the year (since 2000 as 1 byte).
-        Returns: 0xAA (_ACK)
+        Returns: 0xAA (ACK)
         """
         self._validate_range("set_date_year", "year_since_2000", year_since_2000, 0, 0xFF)
         return self._cmd_ack("set_date_year", b"<SETDATEYY" + bytes([year_since_2000]) + b">>")
@@ -60,7 +59,7 @@ class RTCService(ServiceBase):
     def set_date_month(self, month: int) -> bool:
         """
         RFC1801: <SETDATEMM[D0]>> sets the month (1..12).
-        Returns: 0xAA (_ACK)
+        Returns: 0xAA (ACK)
         """
         self._validate_range("set_date_month", "month", month, 1, 12)
         return self._cmd_ack("set_date_month", b"<SETDATEMM" + bytes([month]) + b">>")
@@ -68,7 +67,7 @@ class RTCService(ServiceBase):
     def set_date_day(self, day: int) -> bool:
         """
         RFC1801: <SETDATEDD[D0]>> sets the day (1..31).
-        Returns: 0xAA (_ACK)
+        Returns: 0xAA (ACK)
         """
         self._validate_range("set_date_day", "day", day, 1, 31)
         return self._cmd_ack("set_date_day", b"<SETDATEDD" + bytes([day]) + b">>")
@@ -76,7 +75,7 @@ class RTCService(ServiceBase):
     def set_time_hour(self, hour: int) -> bool:
         """
         RFC1801: <SETTIMEHH[D0]>> sets the hour (0..23).
-        Returns: 0xAA (_ACK)
+        Returns: 0xAA (ACK)
         """
         self._validate_range("set_time_hour", "hour", hour, 0, 23)
         return self._cmd_ack("set_time_hour", b"<SETTIMEHH" + bytes([hour]) + b">>")
@@ -84,7 +83,7 @@ class RTCService(ServiceBase):
     def set_time_minute(self, minute: int) -> bool:
         """
         RFC1801: <SETTIMEMM[D0]>> sets the minute (0..59).
-        Returns: 0xAA (_ACK)
+        Returns: 0xAA (ACK)
         """
         self._validate_range("set_time_minute", "minute", minute, 0, 59)
         return self._cmd_ack("set_time_minute", b"<SETTIMEMM" + bytes([minute]) + b">>")
@@ -92,7 +91,7 @@ class RTCService(ServiceBase):
     def set_time_second(self, second: int) -> bool:
         """
         RFC1801: <SETTIMESS[D0]>> sets the second (0..59).
-        Returns: 0xAA (_ACK)
+        Returns: 0xAA (ACK)
         """
         self._validate_range("set_time_second", "second", second, 0, 59)
         return self._cmd_ack("set_time_second", b"<SETTIMESS" + bytes([second]) + b">>")
@@ -108,11 +107,7 @@ class RTCService(ServiceBase):
     ) -> bool:
         """
         RFC1801: <SETDATETIME[YYMMDDHHMMSS]>> sets date+time in one command.
-        Returns: 0xAA (_ACK)
-
-        All fields are transmitted as individual bytes:
-          YY = years since 2000
-          MM,DD,HH,MM,SS as usual
+        Returns: 0xAA (ACK)
         """
         self._validate_range("set_datetime", "year_since_2000", year_since_2000, 0, 0xFF)
         self._validate_range("set_datetime", "month", month, 1, 12)

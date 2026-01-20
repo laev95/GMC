@@ -81,10 +81,6 @@ class Parser:
         position. The validity check involves verifying predefined markers, checking
         a plausible date format, and validating specific byte patterns.
 
-        :param buf: The byte buffer to inspect.
-        :type buf: bytes
-        :param pos: The starting position within the buffer for header validation.
-        :type pos: int
         :return: True if the header is valid, otherwise False.
         :rtype: bool
         """
