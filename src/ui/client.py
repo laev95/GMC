@@ -99,7 +99,7 @@ class GMCDataViewer:
         thread.start()
 
     def _setup_main_layout(self):
-        """Setup the main two-column layout"""
+        """Set up the main two-column layout"""
         # Configure grid weights
         self.root.grid_columnconfigure(0, weight=1, minsize=160)  # 20% for left column
         self.root.grid_columnconfigure(1, weight=4, minsize=640)  # 80% for right column
@@ -543,7 +543,7 @@ class GMCDataViewer:
         self._run_serial_task(task, on_success, on_error)
 
     def _show_wifi(self):
-        """Show WiFi configuration view"""
+        """Show Wi-Fi configuration view"""
         self._clear_content()
         self.current_view = "wifi"
 
